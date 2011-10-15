@@ -1,5 +1,5 @@
 require './lib/dacpclient'
-client = DACPClient.new 'Test client', '192.168.2.10', 3689
+client = DACPClient.new 'Test client', 'localhost', 3689
 p client.serverinfo
 #client.pair [1,2,3,4]
 
