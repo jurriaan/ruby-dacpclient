@@ -4,17 +4,7 @@ require 'stringio'
 
 class DMAPParser
   
-  def self.generate name, values
-    name = name.to_s
-    pairingstring = ""
-    values.each do |key, value|
-      pairingstring += "%s%s%s" % [key.to_s, [value.length].pack('N'), value]
-    end
-    header = name + [pairingstring.length].pack('N')
-    header + pairingstring
-  end
-  
-  def self.parse response 
+   def self.parse response 
     return nil if response.nil? or response.length < 8
     response = StringIO.new response
     ret = TagContainer.new 

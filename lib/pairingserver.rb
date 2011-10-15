@@ -26,12 +26,12 @@ class PairingServer
       'Pair' => @pair
     })
     
-    p DMAPParser.generate :cmpa, { cmpg: @pair, cmnm: @name, cmty: @device_type}
     pairingstring = DMAPBuilder.new.cmpa do
       cmpg pair
       cmnm name
       cmty device_type
     end.to_dmap
+    
     expected = PairingServer::generate_pin_challenge @pair, @pin
     server = TCPServer.open @host, @port
     @service = DNSSD.register! @name, '_touch-remote._tcp', 'local', @port,  txtrecord
