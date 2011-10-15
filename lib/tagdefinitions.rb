@@ -69,7 +69,15 @@ class DMAPParser
       end
       !val.nil?
     end
-
+    
+    def method_missing method, *arguments, &block
+      value.each do |dmap|
+        if dmap.type.tag == method
+          return dmap.value
+        end
+      end
+      super
+    end
   end
       
   
@@ -194,7 +202,7 @@ class DMAPParser
   TagDefinition.new(:carp, :byte, 'dacp.repeatstate'),
   TagDefinition.new(:muty, :byte, 'dmap.updatetype'),   
   TagDefinition.new(:"f\215ch", :byte, 'dmap.haschildcontainers'),
-    TagDefinition.new(:msas, :byte, 'dmap.authenticationschemes'),
+  TagDefinition.new(:msas, :byte, 'dmap.authenticationschemes'),
   TagDefinition.new(:cavs, :bool, 'dacp.visualizer'), # Source: https://code.google.com/p/tunesremote-plus/source/browse/trunk/src/org/tunesremote/daap/Status.java
   TagDefinition.new(:cafs, :bool, 'dacp.fullscreen'),
   TagDefinition.new(:ceGS, :bool, 'com.apple.itunes.genius-selectable'),
