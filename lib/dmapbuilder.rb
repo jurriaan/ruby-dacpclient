@@ -21,11 +21,8 @@ class DMAPBuilder
       end
     else
       if @dmap_stack.length > 0
-        
         @dmap_stack.last.value << DMAPParser::Tag.new(tag, args.size > 1? args : args.first)
-
       else
-        
         raise "Cannot build DMAP without a valid container"
       end
     end    

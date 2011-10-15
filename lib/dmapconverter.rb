@@ -28,7 +28,6 @@ class DMAPConverter
       data.bytes.inject("") {|ret, b| ret += "%02X" % b}
     end
     
-    
     def bool_to_bin data
       if data.true? 
         "\x01"

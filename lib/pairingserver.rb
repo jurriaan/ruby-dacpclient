@@ -38,13 +38,11 @@ class PairingServer
 
     while client = server.accept
       get = client.gets
-      p get
       code = get.match(/pairingcode=([^&]*)/)[1]
     
       if code == expected
         client.print "HTTP/1.1 200 OK\r\nContent-Length: #{pairingstring.length}\r\n\r\n#{pairingstring}"
-        p"HTTP/1.1 200 OK\r\nContent-Length: #{pairingstring.length}\r\n\r\n#{pairingstring}"
-        
+
         puts "Pairing succeeded :)"
         client.close
         break
@@ -56,7 +54,7 @@ class PairingServer
     end
     server.close
     
-    sleep 5 # sleep so iTunes accepts our login
+    sleep 2 # sleep so iTunes accepts our login
     
   end
   

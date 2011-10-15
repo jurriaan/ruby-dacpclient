@@ -23,7 +23,7 @@ class DMAPParser
     
     while !response.eof?
       key = response.read(4).to_sym
-      length = parseint response.read 4
+      length = DMAPConverter.bin_to_int(response.read(4))
       data = response.read length
       tag = Types.find {|a| a.tag == key}
       #puts "#{key} (#{length}): #{data.inspect}"
@@ -58,12 +58,8 @@ class DMAPParser
         #puts "Unknown key #{key}"
         Tag.new TagDefinition.new(key,:unknown,'unknown'), parseunknown(data)
       end
-
     end
-    
     values
-  
-
   end
    
   def self.parseunknown data 
@@ -82,23 +78,4 @@ class DMAPParser
     end
   end
   
-  def self.parseversion data
-    data.unpack('nCC').join '.'
-  end
-  
-  def self.parseshort data
-    data.unpack('n').first
-  end
-  
-  def self.parseint data
-    data.unpack('N').first
-  end
-  
-  def self.parsehex data
-    data.bytes.inject("") {|ret, b| ret += "%02x" % b}
-  end
-  
-  def self.parsebyte data 
-    #TODO
-  end
 end
