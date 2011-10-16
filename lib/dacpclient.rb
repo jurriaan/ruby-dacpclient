@@ -37,7 +37,7 @@ class DACPClient
     @session_id = response[:mlid]
   rescue DACPForbiddenError=>e
     puts "#{e.result.message} error: Cannot login, starting pairing process"
-    pair
+    pair 4.times.map{ Random.rand(10)} 
     retry
   end
   
