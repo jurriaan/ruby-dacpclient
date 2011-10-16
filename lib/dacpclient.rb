@@ -100,7 +100,6 @@ class DACPClient
     end
     params = params.map{|k,v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}"}.join '&'
     uri = URI::HTTP.build({host: @host, port: @port, path: action, query:params})
-    p uri
     req = Net::HTTP::Get.new(uri.request_uri)
     req.add_field 'Viewer-Only-Client', '1'
     res = Net::HTTP.new(uri.host, uri.port).start {|http| http.request(req) }

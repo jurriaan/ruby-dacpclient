@@ -12,7 +12,6 @@ class DMAPParser
     ret.type = Types.find {|a| a.tag == key}
     response.read 4 # ignore length for now
     ret.value = parse_container response
-    p ret
     ret
   end
   
