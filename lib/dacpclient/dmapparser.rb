@@ -54,7 +54,7 @@ module DACPClient
                       when :version
                         Tag.new tag, DMAPConverter.bin_to_version(data)
                       else
-                        puts "Unknown type #{tag.type}"
+                        warn "Unknown type #{tag.type}"
                         Tag.new(tag, parseunknown(data))
                       end
                     else

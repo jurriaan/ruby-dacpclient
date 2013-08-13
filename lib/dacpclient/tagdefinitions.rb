@@ -1,5 +1,3 @@
-# encoding: UTF-8
-
 module DACPClient
   module DMAPParser
 
@@ -32,7 +30,7 @@ module DACPClient
                 when :version
                   DMAPConverter.version_to_bin value.to_i
                 else
-                  puts "Unknown type #{tag.type}"
+                  warn "Unknown type #{tag.type}"
                   # Tag.new tag, parseunknown(data)
                   value
                 end
@@ -42,7 +40,6 @@ module DACPClient
 
     # The TagContainer class is a Tag which contains other Tags
     class TagContainer < Tag
-
       def initialize(type = nil, value = [])
         super type, value
       end
@@ -54,12 +51,16 @@ module DACPClient
       end
 
       def get_value(key)
+        if key.is_a? Fixnum
+          return value[key]
+        end
         key = key.to_s
         val = value.find { |e| e.type.tag == key }
         val = value.find { |e| e.type.name == key } if val.nil?
+
         if val.type.type == :container
           val
-        else
+        elsif !val.nil?
           val.value
         end
       end
@@ -74,10 +75,11 @@ module DACPClient
       end
 
       def method_missing(method, *arguments, &block)
-        value.each do |dmap|
-          return dmap.value if dmap.type.tag.to_s == method.to_s
-        end
-        super
+        get_value(method.to_s)
+      end
+
+      def to_a
+        value
       end
     end
 
@@ -252,7 +254,11 @@ module DACPClient
       TagDefinition.new('msml', :container, 'msml'),
       TagDefinition.new('aeGs', :bool, 'com.apple.itunes.can-be-genius-seed'),
       TagDefinition.new('aprm', :short, 'daap.playlistrepeatmode'),
-      TagDefinition.new('apsm', :short, 'daap.playlistshufflemode')
+      TagDefinition.new('apsm', :short, 'daap.playlistshufflemode'),
+      TagDefinition.new('cmpr', :version, 'dmcp.protocolversion'),
+      TagDefinition.new('capr', :version, 'dacp.protocolversion'),
+      TagDefinition.new('ppro', :version, 'unknown.version'),
+
     ].freeze
   end
 end

@@ -15,7 +15,7 @@ module DACPClient
     end
 
     def start
-      puts "Pairing started (pincode=#{@pin.join})"
+      # puts "Pairing started (pincode=#{@pin.join})"
 
       pairing_string = generate_pairing_string(@pair, @name, @device_type)
 
@@ -32,12 +32,12 @@ module DACPClient
           client.print "HTTP/1.1 200 OK\r\n"
           client.print "Content-Length: #{pairing_string.length}\r\n\r\n"
           client.print pairing_string
-          puts 'Pairing succeeded :)'
+          # puts 'Pairing succeeded :)'
           client.close
           @service.stop
           break
         else
-          puts 'Wrong pincode entered'
+          # puts 'Wrong pincode entered'
           client.print "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
         end
         client.close
