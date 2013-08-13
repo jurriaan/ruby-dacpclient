@@ -1,11 +1,12 @@
-$LOAD_PATH.unshift __dir__
-require File.expand_path('lib/dacpclient.rb', __dir__)
+#!/usr/bin/env ruby
+
+require 'dacpclient'
 require 'english'
 require 'socket'
-include DACPClient
+
 class CLIClient
   def initialize
-    @client = DACPClient::Client.new("CLIClient (#{Socket.gethostname})", 'localhost', 3689)
+    @client = DACPClient::Client.new("CLIClient (#{Socket.gethostname}) 2", 'localhost', 3689)
     @login = false
   end
 
@@ -13,7 +14,7 @@ class CLIClient
     if arguments.length > 0 && !([:parse_arguments].include?(arguments.first.to_sym)) && self.class.instance_methods(false).include?(arguments.first.to_sym)
       method = arguments.first.to_sym
       send method
-      status unless %i{help usage}.include?(method)
+      status unless [:help, :usage, :status, :status_ticker].include?(method)
     else
       usage
     end
@@ -28,11 +29,37 @@ class CLIClient
       name = status.cann
       artist = status.cana
       album = status.canl
-      playstatus = status.caps != 4 ? 'paused' : 'playing'
+      playstatus = status.caps != 4 ? '❙❙' : '▶ '
       remaining = status.cant
       total = status.cast
       current = total - remaining
-      puts "[#{playstatus.upcase} (#{format_time(current)}/#{format_time(total)})] #{name} - #{artist} (#{album})"
+      puts "[#{format_time(current)}/#{format_time(total)}] #{playstatus} #{name} - #{artist} (#{album})"
+    end
+  end
+
+  def status_ticker
+    login
+    status = nil
+    status_time = 0
+    repeat_every(1) do
+      unless status.nil?
+        if status.caps == 2
+          print "\r\033[K[STOPPED]"
+        else
+          name = status.cann
+          artist = status.cana
+          album = status.canl
+          playstatus = status.caps != 4 ? '❙❙' : '▶ '
+          total = status.cast
+          remaining = status.cant
+          current = total - remaining + [((Time.now.to_f * 1000.0) - status_time), 0].max
+          print "\r\033[K[#{format_time(current)}/#{format_time(total)}] #{playstatus} #{name} - #{artist} (#{album})"
+        end
+      end
+    end
+    loop do
+      status = @client.status true
+      status_time = Time.now.to_f * 1000.0
     end
   end
 
@@ -94,6 +121,7 @@ class CLIClient
 
   def usage
     puts "Usage: #{$PROGRAM_NAME} [command]"
+    puts "(c) #{Time.now.year} Jurriaan Pruis <email@jurriaanpruis.nl>"
     puts
     puts 'Where command is one of the following:'
 
@@ -118,6 +146,17 @@ class CLIClient
       sprintf('%02d:%02d', minutes, seconds)
     else
       sprintf('%02d:%02d:%02d', hours, minutes, seconds)
+    end
+  end
+
+  def repeat_every(interval)
+    Thread.new do
+      loop do
+        start_time = Time.now
+        yield
+        elapsed = Time.now - start_time
+        sleep([interval - elapsed, 0].max)
+      end
     end
   end
 end
