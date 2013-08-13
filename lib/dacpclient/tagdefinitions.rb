@@ -1,89 +1,14 @@
+require 'dacpclient/tag'
+require 'dacpclient/tagcontainer'
+
 module DACPClient
   module DMAPParser
-
-    Tag = Struct.new(:type, :value) do
-      def inspect(level = 0)
-        "#{'  ' * level}#{type}: #{value}"
-      end
-
-      def to_dmap
-        value = self.value
-        value = case type.type
-                when :container
-                  value.reduce('') { |a, e| a += e.to_dmap }
-                when :byte
-                  DMAPConverter.byte_to_bin value
-                when :uint16, :short
-                  DMAPConverter.short_to_bin value
-                when :uint32
-                  DMAPConverter.int_to_bin value
-                when :uint64
-                  DMAPConverter.long_to_bin value
-                when :bool
-                  DMAPConverter.bool_to_bin value
-                when :hex
-                  DMAPConverter.hex_to_bin value
-                when :string
-                  value
-                when :date
-                  DMAPConverter.int_to_bin value.to_i
-                when :version
-                  DMAPConverter.version_to_bin value.to_i
-                else
-                  warn "Unknown type #{tag.type}"
-                  # Tag.new tag, parseunknown(data)
-                  value
-                end
-        type.tag.to_s + [value.length].pack('N') + value
-      end
-    end
-
-    # The TagContainer class is a Tag which contains other Tags
-    class TagContainer < Tag
-      def initialize(type = nil, value = [])
-        super type, value
-      end
-
-      def inspect(level = 0)
-        "#{'  ' * level}#{type}:\n" + value.reduce('') do |a, e|
-          a + e.inspect(level + 1).chomp + "\n"
-        end
-      end
-
-      def get_value(key)
-        if key.is_a? Fixnum
-          return value[key]
-        end
-        key = key.to_s
-        val = value.find { |e| e.type.tag == key }
-        val = value.find { |e| e.type.name == key } if val.nil?
-
-        if val.type.type == :container
-          val
-        elsif !val.nil?
-          val.value
-        end
-      end
-
-      alias_method :[], :get_value
-
-      def has?(key)
-        key = key.to_s
-        val = value.find { |e| e.type.tag == key }
-        val = value.find { |e| e.type.name == key } if val.nil?
-        !val.nil?
-      end
-
-      def method_missing(method, *arguments, &block)
-        get_value(method.to_s)
-      end
-
-      def to_a
-        value
-      end
-    end
-
+    # The TagDefinition class describes the tags
     TagDefinition = Struct.new(:tag, :type, :name) do
+      def self.find key
+        Types.find { |a| a.tag.to_s == key.to_s }
+      end
+      
       def inspect
         "#{tag} (#{name}: #{type})"
       end
@@ -257,8 +182,7 @@ module DACPClient
       TagDefinition.new('apsm', :short, 'daap.playlistshufflemode'),
       TagDefinition.new('cmpr', :version, 'dmcp.protocolversion'),
       TagDefinition.new('capr', :version, 'dacp.protocolversion'),
-      TagDefinition.new('ppro', :version, 'unknown.version'),
-
+      TagDefinition.new('ppro', :version, 'unknown.version')
     ].freeze
   end
 end
