@@ -14,37 +14,24 @@ module DACPClient
     end
 
     def start
-      name = @name
-      pair  = @pair
       device_type = @device_type
       puts "Pairing started (pincode=#{@pin.join})"
-      txtrecord = DNSSD::TextRecord.new({
-        'DvNm' => @name,
-        'Revm' => '10000',
-        'DvTy' => @device_type,
-        'RemN' => 'Remote',
-        'txtvers' => '1',
-        'Pair' => @pair
-      })
 
-      pairingstring = DMAPBuilder.cmpa do
-        cmpg pair
-        cmnm name
-        cmty device_type
-      end.to_dmap
+      pairing_string = generate_pairing_string @pair, @name, @device_type
 
       expected = PairingServer.generate_pin_challenge(@pair, @pin)
       server = TCPServer.open(@host, @port)
-      @service = DNSSD.register!(@name, '_touch-remote._tcp', 'local', @port,  txtrecord)
+      @service = DNSSD.register!(@name, '_touch-remote._tcp', 'local', @port, text_record)
 
       while (client = server.accept)
         get = client.gets
         code = get.match(/pairingcode=([^&]*)/)[1]
 
         if code == expected
-          client.print "HTTP/1.1 200 OK\r\nContent-Length: #{pairingstring.length}\r\n\r\n#{pairingstring}"
+          client.print "HTTP/1.1 200 OK\r\nContent-Length: #{pairing_string.length}\r\n\r\n#{pairing_string}"
           puts 'Pairing succeeded :)'
           client.close
+          @service.stop
           break
         else
           puts 'Wrong pincode entered'
@@ -62,5 +49,25 @@ module DACPClient
       Digest::MD5.hexdigest(pair + pin_string).upcase
     end
 
+    private
+
+    def text_record
+      DNSSD::TextRecord.new({
+        'DvNm' => @name,
+        'Revm' => '10000',
+        'DvTy' => @device_type,
+        'RemN' => 'Remote',
+        'txtvers' => '1',
+        'Pair' => @pair
+      })
+    end
+
+    def generate_pairing_string pair, name, device_type
+      DMAPBuilder.cmpa do
+        cmpg pair
+        cmnm name
+        cmty device_type
+      end.to_dmap
+    end
   end
 end

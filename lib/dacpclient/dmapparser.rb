@@ -1,5 +1,5 @@
-require_relative 'tagdefinitions'
-require_relative 'dmapconverter'
+require 'dacpclient/tagdefinitions'
+require 'dacpclient/dmapconverter'
 
 require 'stringio'
 module DACPClient

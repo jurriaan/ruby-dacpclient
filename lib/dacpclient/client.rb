@@ -1,11 +1,11 @@
-$LOAD_PATH.unshift __dir__
 require 'rubygems'
-require 'bundler/setup'
+require 'bundler'
+Bundler.setup(:default)
 require 'digest'
 require 'net/http'
-require_relative 'pairingserver'
-require_relative 'dmapparser'
-require_relative 'dmapbuilder'
+require 'dacpclient/pairingserver'
+require 'dacpclient/dmapparser'
+require 'dacpclient/dmapbuilder'
 require 'uri'
 require 'cgi'
 
@@ -77,6 +77,12 @@ module DACPClient
       result = do_action(:playstatusupdate, 'revision-number' => revision)
       @mediarevision = result[:cmsr]
       result
+    rescue Net::ReadTimeout => e
+      if wait
+        retry
+      else
+        raise e
+      end
     end
 
     def next
@@ -167,15 +173,19 @@ module DACPClient
         params['session-id'] = @session_id
         action = '/ctrl-int/1' + action unless cleanurl
       end
-      params = params.map { |k, v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}" }.join '&'
+      params = URI.encode_www_form(params)
       uri = URI::HTTP.build({ host: @host, port: @port, path: action, query: params })
       req = Net::HTTP::Get.new(uri.request_uri)
       req.add_field('Viewer-Only-Client', '1')
-      res = Net::HTTP.new(uri.host, uri.port).start { |http| http.request(req) }
+      res = Net::HTTP.new(uri.host, uri.port).start do |http|
+        http.read_timeout = 1000
+        http.request(req)
+      end
       if res.kind_of?(Net::HTTPServiceUnavailable) || res.kind_of?(Net::HTTPForbidden)
         raise DACPForbiddenError.new(res)
       elsif !res.kind_of?(Net::HTTPSuccess)
-        p res
+        warn 'No succes!'
+        warn res
         return nil
       end
 
