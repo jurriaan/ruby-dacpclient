@@ -1,4 +1,5 @@
 module DACPClient
+  # The DMAPConverter class converts between binary and ruby formats
   class DMAPConverter
     class << self
       def bin_to_byte(data)

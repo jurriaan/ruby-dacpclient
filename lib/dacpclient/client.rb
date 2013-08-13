@@ -10,6 +10,7 @@ require 'uri'
 require 'cgi'
 
 module DACPClient
+  # The Client class handles communication with the server
   class Client
 
     def initialize(name, host = 'localhost', port = 3689)
@@ -38,7 +39,8 @@ module DACPClient
     end
 
     def login(pin = nil)
-      response = do_action(:login, { 'pairing-guid' => '0x' + Client.get_guid(@name) })
+      pairing_guid = '0x' + Client.get_guid(@name)
+      response = do_action(:login, { 'pairing-guid' => pairing_guid })
       @session_id = response[:mlid]
       response
     rescue DACPForbiddenError => e
@@ -129,31 +131,33 @@ module DACPClient
     end
 
     def queue(id)
-      do_action 'playqueue-edit', { command: 'add', query: "\'dmap.itemid:#{id}\'" }
+      do_action('playqueue-edit', { command: 'add',
+                                    query: "\'dmap.itemid:#{id}\'" })
     end
 
     def clear_queue
-      do_action 'playqueue-edit', { command: 'clear' }
+      do_action('playqueue-edit', { command: 'clear' })
     end
 
     def list_queue
-      do_action 'playqueue-contents', {}
+      do_action('playqueue-contents', {})
     end
 
     def databases
-      do_action 'databases', {}, true
+      do_action('databases', {}, true)
     end
 
     def playlists(db)
-      do_action "databases/#{db}/containers", {}, true
+      do_action("databases/#{db}/containers", {}, true)
     end
 
     def artwork(database, id, width = 320, height = 320)
-      do_action "databases/#{database}/items/#{id}/extra_data/artwork", { mw: width, mh: height }, true
+      url = "databases/#{database}/items/#{id}/extra_data/artwork"
+      do_action(url, { mw: width, mh: height }, true)
     end
 
     def now_playing_artwork(width = 320, height = 320)
-      do_action :nowplayingartwork, { mw: width, mh: height }
+      do_action(:nowplayingartwork, { mw: width, mh: height })
     end
 
     def search(db, container, search)
@@ -161,8 +165,11 @@ module DACPClient
       queries = []
       queries.push(words.map { |v| "\'dmap.itemname:*#{v}*\'" }.join('+'))
       # queries.push(words.map{|v| "\'daap.songartist:*#{v}*\'"}.join('+'))
-      query = '(' + queries.map { |q| "(#{q})" }.join(',') + ')'
-      do_action "databases/#{db}/containers/#{container}/items", { type: 'music', sort: 'album', meta: 'dmap.itemid,dmap.itemname,daap.songartist,daap.songalbum', query: query }, true
+      q = '(' + queries.map { |query| "(#{query})" }.join(',') + ')'
+      meta = 'dmap.itemid,dmap.itemname,daap.songartist,daap.songalbum'
+      url = "databases/#{db}/containers/#{container}/items"
+      do_action(url, { type: 'music', sort: 'album', query: q, meta: meta },
+                true)
     end
 
     private
@@ -174,14 +181,16 @@ module DACPClient
         action = '/ctrl-int/1' + action unless cleanurl
       end
       params = URI.encode_www_form(params)
-      uri = URI::HTTP.build({ host: @host, port: @port, path: action, query: params })
+      uri = URI::HTTP.build({ host: @host, port: @port, path: action,
+                              query: params })
       req = Net::HTTP::Get.new(uri.request_uri)
       req.add_field('Viewer-Only-Client', '1')
       res = Net::HTTP.new(uri.host, uri.port).start do |http|
         http.read_timeout = 1000
         http.request(req)
       end
-      if res.kind_of?(Net::HTTPServiceUnavailable) || res.kind_of?(Net::HTTPForbidden)
+      if res.kind_of?(Net::HTTPServiceUnavailable) ||
+         res.kind_of?(Net::HTTPForbidden)
         raise DACPForbiddenError.new(res)
       elsif !res.kind_of?(Net::HTTPSuccess)
         warn 'No succes!'
@@ -190,13 +199,15 @@ module DACPClient
       end
 
       if res['Content-Type'] == 'application/x-dmap-tagged'
-        DMAPParser.parse(res.body)
+        DMAPParser::Parser.parse(res.body)
       else
         res.body
       end
     end
   end
 
+  # This error is raised if the DACP resource returns forbidden or
+  # service unavailable
   class DACPForbiddenError < StandardError
     attr_reader :result
     def initialize(res)

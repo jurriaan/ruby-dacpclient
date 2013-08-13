@@ -1,5 +1,7 @@
 # Avoid methods longer than 10 lines of code
 MethodLength:
   Enabled: false
-LineLength:
+Documentation:
+  Enabled: false
+ConstantName:
   Enabled: false

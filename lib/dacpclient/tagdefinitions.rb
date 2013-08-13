@@ -1,7 +1,7 @@
 # encoding: UTF-8
 
 module DACPClient
-  class DMAPParser
+  module DMAPParser
 
     Tag = Struct.new(:type, :value) do
       def inspect(level = 0)
@@ -40,6 +40,7 @@ module DACPClient
       end
     end
 
+    # The TagContainer class is a Tag which contains other Tags
     class TagContainer < Tag
 
       def initialize(type = nil, value = [])
@@ -47,7 +48,9 @@ module DACPClient
       end
 
       def inspect(level = 0)
-        "#{'  ' * level}#{type}:\n" + value.reduce('') { |a, e| a + e.inspect(level + 1).chomp + "\n" }
+        "#{'  ' * level}#{type}:\n" + value.reduce('') do |a, e|
+          a + e.inspect(level + 1).chomp + "\n"
+        end
       end
 
       def get_value(key)
@@ -92,6 +95,7 @@ module DACPClient
     # https://github.com/chendo/dmap-ng/blob/master/lib/dmap/tag_definitions.rb
     # https://code.google.com/p/ytrack/wiki/DMAP
     # https://code.google.com/p/tunesremote-se/wiki/ContentCodes
+    # https://raw.github.com/mattstevens/dmap-parser/master/dmap_parser.c
     # /content-codes
     Types = [
       TagDefinition.new('mcon', :container, 'dmap.container'),
@@ -136,7 +140,7 @@ module DACPClient
       TagDefinition.new('asgn', :string, 'daap.songgenre'),
       TagDefinition.new('asdt', :string, 'daap.songdescription'),
       TagDefinition.new('asul', :string, 'daap.songdataurl'),
-      TagDefinition.new('ceWM', :string, 'com.apple.itunes.welcome-message'), # not a official name?
+      TagDefinition.new('ceWM', :string, 'com.apple.itunes.welcome-message'),
       TagDefinition.new('ascp', :string, 'daap.songcomposer'),
       TagDefinition.new('assu', :string, 'daap.sortartist'),
       TagDefinition.new('assa', :string, 'daap.sortalbum'),
@@ -201,7 +205,7 @@ module DACPClient
       TagDefinition.new('muty', :byte, 'dmap.updatetype'),
       TagDefinition.new("f\215ch", :byte, 'dmap.haschildcontainers'),
       TagDefinition.new('msas', :byte, 'dmap.authenticationschemes'),
-      TagDefinition.new('cavs', :bool, 'dacp.visualizer'), # Source: https://code.google.com/p/tunesremote-plus/source/browse/trunk/src/org/tunesremote/daap/Status.java
+      TagDefinition.new('cavs', :bool, 'dacp.visualizer'),
       TagDefinition.new('cafs', :bool, 'dacp.fullscreen'),
       TagDefinition.new('ceGS', :bool, 'com.apple.itunes.genius-selectable'),
       TagDefinition.new('mslr', :bool, 'dmap.loginrequired'),
@@ -223,8 +227,9 @@ module DACPClient
       TagDefinition.new('aeFP', :bool, 'com.apple.itunes.req-fplay'),
       TagDefinition.new('aeHV', :bool, 'com.apple.itunes.has-video'),
       TagDefinition.new('caia', :bool, 'dacp.isavailiable'),
-      TagDefinition.new('ceVO', :bool, 'com.apple.itunes.voting-enabled'), # not an official name
-      TagDefinition.new('aeSV', :version, 'com.apple.itunes.music-sharing-version'),
+      TagDefinition.new('ceVO', :bool, 'com.apple.itunes.voting-enabled'),
+      TagDefinition.new('aeSV', :version,
+                        'com.apple.itunes.music-sharing-version'),
       TagDefinition.new('mpro', :version, 'dmap.protocolversion'),
       TagDefinition.new('apro', :version, 'daap.protocolversion'),
       TagDefinition.new('musr', :version, 'dmap.serverrevision'),
@@ -235,9 +240,11 @@ module DACPClient
       TagDefinition.new('ceJI', :bool, 'com.apple.itunes.jukebox-current'),
       TagDefinition.new('ceJS', :uint16, 'com.apple.itunes.jukebox-score'),
       TagDefinition.new('ceJV', :bool, 'com.apple.itunes.jukebox-vote'),
-      TagDefinition.new('ceQR', :container, 'com.apple.itunes.playqueue-contents-response'),
-      TagDefinition.new('ceQS', :container, 'com.apple.itunes.playqueue-contents-???'),
-      TagDefinition.new('ceQs', :uint64, 'com.apple.itunes.playqueue-id'), # non-official name
+      TagDefinition.new('ceQR', :container,
+                        'com.apple.itunes.playqueue-contents-response'),
+      TagDefinition.new('ceQS', :container,
+                        'com.apple.itunes.playqueue-contents-???'),
+      TagDefinition.new('ceQs', :uint64, 'com.apple.itunes.playqueue-id'),
       TagDefinition.new('ceQa', :string, 'com.apple.itunes.playqueue-album'),
       TagDefinition.new('ceQg', :string, 'com.apple.itunes.playqueue-genre'),
       TagDefinition.new('ceQn', :string, 'com.apple.itunes.playqueue-name'),
@@ -245,8 +252,7 @@ module DACPClient
       TagDefinition.new('msml', :container, 'msml'),
       TagDefinition.new('aeGs', :bool, 'com.apple.itunes.can-be-genius-seed'),
       TagDefinition.new('aprm', :short, 'daap.playlistrepeatmode'),
-      TagDefinition.new('apsm', :short, 'daap.playlistshufflemode'),
-
+      TagDefinition.new('apsm', :short, 'daap.playlistshufflemode')
     ].freeze
   end
 end

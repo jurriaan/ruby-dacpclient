@@ -7,8 +7,8 @@ Gem::Specification.new do |spec|
   spec.version       = DACPClient::VERSION
   spec.authors       = ['Jurriaan Pruis']
   spec.email         = ['email@jurriaanpruis.nl']
-  spec.description   = 'A DACP (iTunes Remote protocol) client written in the wonderful Ruby language'
-  spec.summary       = 'A DACP (iTunes Remote protocol) client written in the wonderful Ruby language'
+  spec.description   = 'A DACP (iTunes Remote protocol) client'
+  spec.summary       = 'A DACP (iTunes Remote protocol) client'
   spec.homepage      = 'https://github.com/jurriaan/ruby-dacpclient'
   spec.license       = 'MIT'
   spec.platform      = Gem::Platform::RUBY

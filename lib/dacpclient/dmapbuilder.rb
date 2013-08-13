@@ -1,4 +1,5 @@
 module DACPClient
+  # This class provides a DSL to create DMAP responses
   class DMAPBuilder
     attr_reader :result
 
@@ -7,11 +8,14 @@ module DACPClient
     end
 
     def self.method_missing(method, *args, &block)
-      self.new.send(method, *args, &block)
+      new.send(method, *args, &block)
     end
 
     def method_missing(method, *args, &block)
-      return super if method.to_s.length != 4 || (tag = DMAPParser::Types.find { |a| a.tag.to_s == method.to_s }).nil?
+      if method.to_s.length != 4 ||
+        (tag = DMAPParser::Types.find { |a| a.tag.to_s == method.to_s }).nil?
+        return super
+      end
       if block_given?
         if tag.type == :container
           @dmap_stack << DMAPParser::TagContainer.new(tag)
@@ -26,7 +30,8 @@ module DACPClient
         end
       else
         if @dmap_stack.length > 0
-          @dmap_stack.last.value << DMAPParser::Tag.new(tag, args.size > 1 ? args : args.first)
+          args = args.size > 1 ? args : args.first
+          @dmap_stack.last.value << DMAPParser::Tag.new(tag, args)
         else
           raise 'Cannot build DMAP without a valid container'
         end

@@ -2,6 +2,7 @@ require 'socket'
 require 'dnssd'
 require 'digest'
 module DACPClient
+  # The pairingserver handles pairing with iTunes
   class PairingServer
     attr_accessor :pin, :device_type
     def initialize(name, host, port = 1024)
@@ -14,21 +15,23 @@ module DACPClient
     end
 
     def start
-      device_type = @device_type
       puts "Pairing started (pincode=#{@pin.join})"
 
-      pairing_string = generate_pairing_string @pair, @name, @device_type
+      pairing_string = generate_pairing_string(@pair, @name, @device_type)
 
       expected = PairingServer.generate_pin_challenge(@pair, @pin)
       server = TCPServer.open(@host, @port)
-      @service = DNSSD.register!(@name, '_touch-remote._tcp', 'local', @port, text_record)
+      type = '_touch-remote._tcp'
+      @service = DNSSD.register!(@name, type, 'local', @port, text_record)
 
       while (client = server.accept)
         get = client.gets
         code = get.match(/pairingcode=([^&]*)/)[1]
 
         if code == expected
-          client.print "HTTP/1.1 200 OK\r\nContent-Length: #{pairing_string.length}\r\n\r\n#{pairing_string}"
+          client.print "HTTP/1.1 200 OK\r\n"
+          client.print "Content-Length: #{pairing_string.length}\r\n\r\n"
+          client.print pairing_string
           puts 'Pairing succeeded :)'
           client.close
           @service.stop
@@ -62,7 +65,7 @@ module DACPClient
       })
     end
 
-    def generate_pairing_string pair, name, device_type
+    def generate_pairing_string(pair, name, device_type)
       DMAPBuilder.cmpa do
         cmpg pair
         cmnm name
