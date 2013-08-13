@@ -114,6 +114,11 @@ class CLIClient
     puts
   end
 
+  def stop
+    login
+    @client.stop
+  end
+
   def debug
     login
     require 'pry'
