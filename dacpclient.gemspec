@@ -20,6 +20,7 @@ Gem::Specification.new do |spec|
   spec.extra_rdoc_files = ['README.md', 'LICENSE']
 
   spec.add_runtime_dependency 'dnssd', '~> 2.0'
+  spec.add_runtime_dependency 'faraday', '~> 0.8.8'
 
   spec.add_development_dependency 'yard'
   spec.add_development_dependency 'redcarpet'

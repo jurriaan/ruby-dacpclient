@@ -13,12 +13,12 @@ module DACPClient
 
     def method_missing(method, *args, &block)
       if method.to_s.length != 4 ||
-        (tag = DMAPParser::Types.find { |a| a.tag.to_s == method.to_s }).nil?
+        (tag = TagDefinitions.find { |a| a.tag.to_s == method.to_s }).nil?
         return super
       end
       if block_given?
         if tag.type == :container
-          @dmap_stack << DMAPParser::TagContainer.new(tag)
+          @dmap_stack << TagContainer.new(tag)
           instance_eval(&block)
           if @dmap_stack.length > 1
             @dmap_stack.last.value << @dmap_stack.pop
@@ -31,7 +31,7 @@ module DACPClient
       else
         if @dmap_stack.length > 0
           args = args.size > 1 ? args : args.first
-          @dmap_stack.last.value << DMAPParser::Tag.new(tag, args)
+          @dmap_stack.last.value << Tag.new(tag, args)
         else
           raise 'Cannot build DMAP without a valid container'
         end

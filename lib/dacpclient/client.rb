@@ -1,11 +1,13 @@
 require 'rubygems'
 require 'bundler'
 Bundler.setup(:default)
+require 'faraday'
 require 'digest'
 require 'net/http'
 require 'dacpclient/pairingserver'
 require 'dacpclient/dmapparser'
 require 'dacpclient/dmapbuilder'
+require 'dacpclient/bonjour'
 require 'uri'
 require 'cgi'
 
@@ -21,6 +23,10 @@ module DACPClient
       @service = nil
       @session_id = nil
       @mediarevision = 1
+      @uri = URI::HTTP.build(host: @host, port: @port)
+      @client = Faraday.new(:url => @uri.to_s) do |faraday|
+        #faraday.options = { proxy: nil, timeout: 1000 }
+      end
     end
 
     def pair(pin)
@@ -45,7 +51,7 @@ module DACPClient
       response
     rescue DACPForbiddenError => e
       pin = 4.times.map { Random.rand(10) } if pin.nil?
-      warn "#{e.result.message} error: Cannot login, starting pairing process"
+      warn "#{e.result.status} error: Cannot login, starting pairing process"
       warn "Pincode: #{pin}"
       pair(pin)
       retry
@@ -202,26 +208,19 @@ module DACPClient
         params['session-id'] = @session_id
         action = '/ctrl-int/1' + action unless cleanurl
       end
-      params = params.map { |k,v| "#{k}=#{v}" }.join('&')
-      uri = URI::HTTP.build({ host: @host, port: @port, path: action,
-                              query: params })
-      req = Net::HTTP::Get.new(uri.request_uri)
-      req.add_field('Viewer-Only-Client', '1')
-      res = Net::HTTP.new(uri.host, uri.port).start do |http|
-        http.read_timeout = 1000
-        http.request(req)
-      end
-      if res.kind_of?(Net::HTTPServiceUnavailable) ||
-         res.kind_of?(Net::HTTPForbidden)
-        raise DACPForbiddenError.new(res)
-      elsif !res.kind_of?(Net::HTTPSuccess)
-        warn 'No succes!'
-        warn res
-        return nil
-      end
 
-      if res['Content-Type'] == 'application/x-dmap-tagged'
-        DMAPParser::Parser.parse(res.body)
+      res = @client.get do |req|
+        req.url action
+        req.params = params
+        req.headers['Viewer-Only-Client'] = '1'
+        req.headers['Connection'] = 'keep-alive'
+        req.headers['Accept-Encoding'] = 'gzip'
+      end
+      
+      if !res.success?
+        raise DACPForbiddenError.new(res)
+      elsif res.headers['Content-Type'] == 'application/x-dmap-tagged'
+        DMAPParser.parse(res.body)
       else
         res.body
       end
