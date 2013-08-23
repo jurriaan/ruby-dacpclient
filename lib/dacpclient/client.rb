@@ -15,18 +15,24 @@ module DACPClient
   # The Client class handles communication with the server
   class Client
 
+    attr_accessor :guid
+
+    attr_reader :name, :host, :port, :session_id
+
+    DEFAULT_HEADERS = {
+      'Viewer-Only-Client' => '1',
+    }.freeze
+
     def initialize(name, host = 'localhost', port = 3689)
       @client = Net::HTTP.new(host, port)
       @name = name
       @host = host
       @port = port
-      @service = nil
+
       @session_id = nil
       @mediarevision = 1
       @uri = URI::HTTP.build(host: @host, port: @port)
-      @client = Faraday.new(:url => @uri.to_s) do |faraday|
-        #faraday.options = { proxy: nil, timeout: 1000 }
-      end
+      @client = Faraday.new(url: @uri.to_s)
     end
 
     def pair(pin)
@@ -36,19 +42,24 @@ module DACPClient
     end
 
     def self.get_guid(name)
-       d = Digest::SHA2.hexdigest(name)
-       d[0..15]
+      return @guid unless @guid.nil?
+      d = Digest::SHA2.hexdigest(name)
+      d[0..15]
     end
 
     def serverinfo
       do_action('server-info')
     end
 
-    def login(pin = nil)
+    def login
       pairing_guid = '0x' + Client.get_guid(@name)
       response = do_action(:login, { 'pairing-guid' => pairing_guid })
       @session_id = response[:mlid]
       response
+    end
+
+    def pair_and_login(pin = nil)
+      login
     rescue DACPForbiddenError => e
       pin = 4.times.map { Random.rand(10) } if pin.nil?
       warn "#{e.result.status} error: Cannot login, starting pairing process"
@@ -102,6 +113,8 @@ module DACPClient
       do_action(:previtem)
     end
 
+    alias_method :previous, :prev
+
     def get_volume
       response = do_action(:getproperty, properties: 'dmcp.volume')
       response[:cmvo]
@@ -130,11 +143,13 @@ module DACPClient
     end
 
     def ctrl_int
-      do_action('ctrl-int', {}, false)
+      do_action('ctrl-int', {}, true)
     end
 
     def logout
-      do_action(:logout, {}, false)
+      do_action(:logout)
+      @mediarevision = 1
+      @session_id = nil
     end
 
     def queue(id)
@@ -147,7 +162,7 @@ module DACPClient
     end
 
     def list_queue
-      do_action('playqueue-contents', {})
+      do_action('playqueue-contents')
     end
 
     def databases
@@ -159,7 +174,7 @@ module DACPClient
     end
 
     def default_db
-      databases[:mlcl].to_a.find {|item| item.mdbk == 1}
+      databases[:mlcl].to_a.find { |item| item.mdbk == 1 }
     end
 
     def default_playlist(db)
@@ -186,17 +201,15 @@ module DACPClient
       }
       queries = []
       type = types.keys if type.nil?
-      Array(type).each do  |t|
+      Array(type).each do |t|
         queries << "'#{types[t]}:#{search}'"
       end
-      # @http.get("/databases/1/containers/1/items?query='daap.songartist:#{escaped_pattern}','daap.songalbum:#{escaped_pattern}','dmap.itemname:#{escaped_pattern}','daap.songgenre:#{escaped_pattern}','daap.songcomposer:#{escaped_pattern}'").body
-      #queries.push(words.map { |v| "\'dmap.itemname:*#{v}*\'" }.join('+'))
-      # queries.push(words.map{|v| "\'daap.songartist:*#{v}*\'"}.join('+'))
+
       q = queries.join(',')
       meta = 'dmap.itemname,dmap.itemid,daap.songartist,daap.songalbumartist,daap.songalbum,com.apple.itunes.cloud-id,dmap.containeritemid,com.apple.itunes.has-video,com.apple.itunes.itms-songid,com.apple.itunes.extended-media-kind,dmap.downloadstatus,daap.songdisabled'
 
       url = "databases/#{db}/containers/#{container}/items"
-      do_action(url, { type: 'music', sort: 'album', query: q, meta: meta},
+      do_action(url, { type: 'music', sort: 'album', query: q, meta: meta },
                 true)
     end
 
@@ -209,20 +222,22 @@ module DACPClient
         action = '/ctrl-int/1' + action unless cleanurl
       end
 
-      res = @client.get do |req|
-        req.url action
-        req.params = params
-        req.headers['Viewer-Only-Client'] = '1'
-        req.headers['Connection'] = 'keep-alive'
-        req.headers['Accept-Encoding'] = 'gzip'
+      result = @client.get do |request|
+        request.url action
+        request.params = params
+        request.headers.merge!(DEFAULT_HEADERS)
       end
-      
-      if !res.success?
-        raise DACPForbiddenError.new(res)
-      elsif res.headers['Content-Type'] == 'application/x-dmap-tagged'
-        DMAPParser.parse(res.body)
+
+      parse_result result
+    end
+
+    def parse_result(result)
+      if !result.success?
+        raise DACPForbiddenError.new(result)
+      elsif result.headers['Content-Type'] == 'application/x-dmap-tagged'
+        DMAPParser.parse(result.body)
       else
-        res.body
+        result.body
       end
     end
   end
@@ -231,8 +246,8 @@ module DACPClient
   # service unavailable
   class DACPForbiddenError < StandardError
     attr_reader :result
-    def initialize(res)
-      @result = res
+    def initialize(result)
+      @result = result
     end
   end
 end

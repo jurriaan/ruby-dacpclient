@@ -7,7 +7,7 @@ require 'socket'
 # This is the CLI DACP Client. Normally installed as `dacpclient`
 class CLIClient
   def initialize
-    @client = DACPClient::Client.new("CLIClient (#{Socket.gethostname})", 'localhost', 3689)
+    @client = DACPClient::Client.new("CLIClient (#{Socket.gethostname}) 111@adsfaaa", 'localhost', 3689)
     @login = false
   end
 
@@ -140,7 +140,7 @@ class CLIClient
   private
 
   def login
-    @client.login unless @login
+    @client.pair_and_login unless @login
     @login = true
   end
 

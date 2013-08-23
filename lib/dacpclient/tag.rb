@@ -3,7 +3,7 @@ module DACPClient
     def to_s
       "#<#{self.class.name} #{type}>"
     end
-    
+
     def inspect(level = 0)
       "#{'  ' * level}#{type}: #{value}"
     end

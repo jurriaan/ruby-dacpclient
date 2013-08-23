@@ -13,7 +13,7 @@ module DACPClient
 
     def method_missing(method, *args, &block)
       if method.to_s.length != 4 ||
-        (tag = TagDefinitions.find { |a| a.tag.to_s == method.to_s }).nil?
+        (tag = TagDefinition[method]).nil?
         return super
       end
       if block_given?

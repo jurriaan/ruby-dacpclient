@@ -3,5 +3,5 @@ MethodLength:
   Enabled: false
 Documentation:
   Enabled: false
-ConstantName:
+AvoidClassVars:
   Enabled: false

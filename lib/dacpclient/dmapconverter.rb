@@ -31,11 +31,7 @@ module DACPClient
       end
 
       def bool_to_bin(data)
-        if data.true?
-          "\x01"
-        else
-          "\x00"
-        end
+        (data ? 1 : 0).chr
       end
 
       def int_to_bin(data)

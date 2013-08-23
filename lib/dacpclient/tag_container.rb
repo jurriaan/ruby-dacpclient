@@ -12,9 +12,8 @@ module DACPClient
     end
 
     def get_value(key)
-      if key.is_a? Fixnum
-        return value[key]
-      end
+      return value[key] if key.is_a? Fixnum
+
       key = key.to_s
       val = value.find { |e| e.type.tag == key }
       val = value.find { |e| e.type.name == key } if val.nil?

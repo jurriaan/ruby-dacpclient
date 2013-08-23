@@ -1,10 +1,14 @@
 require 'socket'
 require 'dnssd'
 require 'digest'
+require 'gserver'
 module DACPClient
   # The pairingserver handles pairing with iTunes
-  class PairingServer
+  class PairingServer < GServer
     attr_accessor :pin, :device_type
+
+    MDNS_TYPE = '_touch-remote._tcp'.freeze
+
     def initialize(name, host, port = 1024)
       @name = name
       @port = port
@@ -12,44 +16,39 @@ module DACPClient
       @pair = Client.get_guid(@name)
       @pin = [0, 0, 0, 0]
       @device_type = 'iPod'
+      super port, host
     end
 
     def start
-      # puts "Pairing started (pincode=#{@pin.join})"
+      @pairing_string = generate_pairing_string(@pair, @name, @device_type)
+      @expected = PairingServer.generate_pin_challenge(@pair, @pin)
+      @service = DNSSD.register!(@name, MDNS_TYPE, 'local', @port, text_record)
 
-      pairing_string = generate_pairing_string(@pair, @name, @device_type)
+      super
+      join
 
-      expected = PairingServer.generate_pin_challenge(@pair, @pin)
-      server = TCPServer.open(@host, @port)
-      type = '_touch-remote._tcp'
-      @service = DNSSD.register!(@name, type, 'local', @port, text_record)
+      @service.stop
 
-      while (client = server.accept)
-        get = client.gets
-        code = get.match(/pairingcode=([^&]*)/)[1]
-
-        if code == expected
-          client.print "HTTP/1.1 200 OK\r\n"
-          client.print "Content-Length: #{pairing_string.length}\r\n\r\n"
-          client.print pairing_string
-          # puts 'Pairing succeeded :)'
-          client.close
-          @service.stop
-          break
-        else
-          # puts 'Wrong pincode entered'
-          client.print "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
-        end
-        client.close
-      end
-      server.close
-
-      sleep 1 # sleep so iTunes accepts our login
+      sleep 0.5 # sleep so iTunes accepts our login
     end
 
     def self.generate_pin_challenge(pair, pin)
       pin_string = pin.map { |i| "#{i}\x00" }.join
       Digest::MD5.hexdigest(pair + pin_string).upcase
+    end
+
+    def serve client
+      code = client.gets.match(/pairingcode=([^&]*)/)[1]
+      correct = code == @expected
+      if correct
+        client.print "HTTP/1.1 200 OK\r\n" +
+                     "Content-Length: #{@pairing_string.length}\r\n\r\n"
+        client.print @pairing_string
+      else
+        client.print "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
+      end
+      client.close
+      stop if correct
     end
 
     private

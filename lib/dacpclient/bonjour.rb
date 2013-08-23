@@ -25,8 +25,9 @@ module DACPClient
             break unless node.flags.more_coming?
           end
         end
-        
+
       rescue Timeout::Error
+        return []
       end
 
       servers
