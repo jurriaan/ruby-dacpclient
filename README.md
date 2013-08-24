@@ -5,6 +5,8 @@
 A DACP (iTunes Remote protocol) client written in the wonderful Ruby language.
 You can use this for controlling iTunes. It uses the same protocol as the iTunes remote iOS app.
 
+You can control iTunes by connecting and entering a pin, or with Home Sharing. DACPClient supports both methods.
+
 Look at the [bin/dacpclient](https://github.com/jurriaan/ruby-dacpclient/blob/master/bin/dacpclient) file for an example client.
 
 ## Installation

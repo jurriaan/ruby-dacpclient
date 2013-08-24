@@ -10,6 +10,7 @@ require 'dacpclient/dmapbuilder'
 require 'dacpclient/bonjour'
 require 'uri'
 require 'cgi'
+require 'plist'
 
 module DACPClient
   # The Client class handles communication with the server
@@ -19,8 +20,14 @@ module DACPClient
 
     attr_reader :name, :host, :port, :session_id
 
+    HOME_SHARING_HOST = 'https://homesharing.itunes.apple.com'
+    HOME_SHARING_PATH = '/WebObjects/MZHomeSharing.woa/wa/getShareIdentifiers'
+
     DEFAULT_HEADERS = {
       'Viewer-Only-Client' => '1',
+      # 'Accept-Encoding' => 'gzip',
+      'Connection' => 'keep-alive',
+      'User-Agent' => 'Remote/2.0'
     }.freeze
 
     def initialize(name, host = 'localhost', port = 3689)
@@ -30,9 +37,23 @@ module DACPClient
       @port = port
 
       @session_id = nil
+      @hsgid = nil
       @mediarevision = 1
       @uri = URI::HTTP.build(host: @host, port: @port)
       @client = Faraday.new(url: @uri.to_s)
+    end
+
+    def setup_home_sharing user, password
+      hs_client = Faraday.new(url: HOME_SHARING_HOST)
+      result = hs_client.post do |request|
+        request.url HOME_SHARING_PATH
+        request.headers['Content-Type'] = 'text/xml'
+        request.headers.merge!(DEFAULT_HEADERS)
+        request.body = { 'appleId' => user, 'guid' => 'empty',
+                         'password' => password }.to_plist
+      end
+      response = Plist::parse_xml(result.body)
+      @hsgid = response['sgid']
     end
 
     def pair(pin)
@@ -52,8 +73,13 @@ module DACPClient
     end
 
     def login
-      pairing_guid = '0x' + Client.get_guid(@name)
-      response = do_action(:login, { 'pairing-guid' => pairing_guid })
+      response = nil
+      if @hsgid.nil?
+        pairing_guid = '0x' + Client.get_guid(@name)
+        response = do_action(:login, { 'pairing-guid' => pairing_guid })
+      else
+        response = do_action(:login, { 'hasFP' => '1' })
+      end
       @session_id = response[:mlid]
       response
     end
@@ -221,7 +247,9 @@ module DACPClient
         params['session-id'] = @session_id
         action = '/ctrl-int/1' + action unless cleanurl
       end
-
+      unless @hsgid.nil?
+        params['hsgid'] = @hsgid
+      end
       result = @client.get do |request|
         request.url action
         request.params = params

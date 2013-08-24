@@ -21,6 +21,7 @@ Gem::Specification.new do |spec|
 
   spec.add_runtime_dependency 'dnssd', '~> 2.0'
   spec.add_runtime_dependency 'faraday', '~> 0.8.8'
+  spec.add_runtime_dependency 'plist', '~> 3.1.0'
 
   spec.add_development_dependency 'yard'
   spec.add_development_dependency 'redcarpet'
