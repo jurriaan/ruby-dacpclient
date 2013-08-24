@@ -69,7 +69,7 @@ module DACPClient
     end
 
     def serverinfo
-      do_action('server-info')
+      do_action('server-info', {}, true)
     end
 
     def login
