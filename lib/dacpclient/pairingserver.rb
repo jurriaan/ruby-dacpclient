@@ -37,7 +37,7 @@ module DACPClient
       Digest::MD5.hexdigest(pair + pin_string).upcase
     end
 
-    def serve client
+    def serve(client)
       code = client.gets.match(/pairingcode=([^&]*)/)[1]
       correct = code == @expected
       if correct

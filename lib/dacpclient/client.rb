@@ -16,7 +16,7 @@ module DACPClient
   # The Client class handles communication with the server
   class Client
 
-    attr_accessor :guid
+    attr_accessor :guid, :hsgid
 
     attr_reader :name, :host, :port, :session_id
 
@@ -43,7 +43,7 @@ module DACPClient
       @client = Faraday.new(url: @uri.to_s)
     end
 
-    def setup_home_sharing user, password
+    def setup_home_sharing(user, password)
       hs_client = Faraday.new(url: HOME_SHARING_HOST)
       result = hs_client.post do |request|
         request.url HOME_SHARING_PATH
@@ -52,7 +52,7 @@ module DACPClient
         request.body = { 'appleId' => user, 'guid' => 'empty',
                          'password' => password }.to_plist
       end
-      response = Plist::parse_xml(result.body)
+      response = Plist.parse_xml(result.body)
       @hsgid = response['sgid']
     end
 
@@ -114,16 +114,29 @@ module DACPClient
       do_action(:pause)
     end
 
+    def track_length
+      response = do_action(:getproperty, properties: 'dacp.playingtime')
+      response['cast']
+    end
+
     def seek(ms)
       do_action(:setproperty, 'dacp.playingtime' => ms)
     end
+
+    def get_position
+      response = do_action(:getproperty, properties: 'dacp.playingtime')
+      response['cast'] - response['cant']
+    end
+
+    alias_method :position, :get_position
+    alias_method :position=, :seek
 
     def status(wait = false)
       revision = wait ? @mediarevision : 1
       result = do_action(:playstatusupdate, 'revision-number' => revision)
       @mediarevision = result[:cmsr]
       result
-    rescue Net::ReadTimeout => e
+    rescue Faraday::Error::TimeoutError => e
       if wait
         retry
       else
@@ -149,6 +162,9 @@ module DACPClient
     def set_volume(volume)
       do_action(:setproperty, 'dmcp.volume' => volume)
     end
+
+    alias_method :volume, :get_volume
+    alias_method :volume=, :set_volume
 
     def get_repeat
       response = do_action(:getproperty, properties: 'dacp.repeatstate')
@@ -232,7 +248,11 @@ module DACPClient
       end
 
       q = queries.join(',')
-      meta = 'dmap.itemname,dmap.itemid,daap.songartist,daap.songalbumartist,daap.songalbum,com.apple.itunes.cloud-id,dmap.containeritemid,com.apple.itunes.has-video,com.apple.itunes.itms-songid,com.apple.itunes.extended-media-kind,dmap.downloadstatus,daap.songdisabled'
+      meta  = %w(dmap.itemname dmap.itemid daap.songartist daap.songalbumartist
+                 daap.songalbum com.apple.itunes.cloud-id dmap.containeritemid
+                 com.apple.itunes.has-video com.apple.itunes.itms-songid
+                 com.apple.itunes.extended-media-kind dmap.downloadstatus
+                 daap.songdisabled).join(',')
 
       url = "databases/#{db}/containers/#{container}/items"
       do_action(url, { type: 'music', sort: 'album', query: q, meta: meta },
@@ -247,9 +267,7 @@ module DACPClient
         params['session-id'] = @session_id
         action = '/ctrl-int/1' + action unless cleanurl
       end
-      unless @hsgid.nil?
-        params['hsgid'] = @hsgid
-      end
+      params['hsgid'] = @hsgid unless @hsgid.nil?
       result = @client.get do |request|
         request.url action
         request.params = params
