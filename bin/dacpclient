@@ -2,11 +2,19 @@
 require 'dacpclient'
 require 'english'
 require 'socket'
+require 'yaml'
+require 'yaml/dbm'
+require 'fileutils'
+require 'io/console'
 
 # This is the CLI DACP Client. Normally installed as `dacpclient`
 class CLIClient
   def initialize
-    @client = DACPClient::Client.new("CLIClient (#{Socket.gethostname})", 'localhost', 3689)
+    @config = {}
+    @config['client_name'] ||= "CLIClient (#{Socket.gethostname})"
+    load_config
+
+    @client = DACPClient::Client.new(@config['client_name'], 'localhost', 3689)
     @login = false
   end
 
@@ -63,6 +71,23 @@ class CLIClient
     end
   end
 
+  def home_sharing
+    puts "Setting up Home Sharing. Saving Home Sharing GUID to ~/.dacpclient/config.yml"
+    puts "\nPlease enter your Apple ID credentials:"
+    print "Apple ID (e-mail address): "
+    email = $stdin.gets.strip
+    print "Password: "
+    password = $stdin.noecho(&:gets).chomp
+    guid = @client.setup_home_sharing(email, password)
+    password = nil
+    @config['appleid'] = email
+    @config['hsgid'] = guid
+    save_config
+    puts "\n\n"
+    puts "Got your Home Sharing GUID (#{guid}). Logging in.."
+    login
+  end
+
   def play
     login
     @client.play
@@ -100,7 +125,7 @@ class CLIClient
 
   def upnext
     login
-    items = @client.list_queue.mlcl.select { |item| item.type.tag == 'mlit' }
+    items = @client.list_queue.mlcl.to_a.select {|i| i.type.tag == 'mlit' }
     puts 'Up next:'
     puts '--------'
     puts
@@ -139,7 +164,13 @@ class CLIClient
   private
 
   def login
-    @client.pair_and_login unless @login
+    return if @login
+    @client.hsgid = @config['hsgid']
+    if @client.hsgid.nil?
+      @client.pair_and_login
+    else
+      @client.login
+    end
     @login = true
   end
 
@@ -162,6 +193,26 @@ class CLIClient
         elapsed = Time.now - start_time
         sleep([interval - elapsed, 0].max)
       end
+    end
+  end
+
+  def config_dir
+    File.join(ENV['HOME'], '.dacpclient')
+  end
+
+  def load_config
+    FileUtils.mkdir_p(config_dir)
+    config_file = File.join(config_dir,'config.yml')
+    if File.exists? config_file
+      @config.merge! YAML.load_file(config_file)
+    else
+      save_config
+    end
+  end
+
+  def save_config
+    File.open(File.join(config_dir,'config.yml'), 'w') do |out|
+      YAML.dump(@config, out)
     end
   end
 end
