@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-
 require 'dacpclient'
 require 'english'
 require 'socket'
@@ -7,7 +6,7 @@ require 'socket'
 # This is the CLI DACP Client. Normally installed as `dacpclient`
 class CLIClient
   def initialize
-    @client = DACPClient::Client.new("CLIClient (#{Socket.gethostname}) 111@adsfaaa", 'localhost', 3689)
+    @client = DACPClient::Client.new("CLIClient (#{Socket.gethostname})", 'localhost', 3689)
     @login = false
   end
 
