@@ -35,7 +35,11 @@ module DACPClient
     end
 
     def method_missing(method, *arguments, &block)
-      get_value(method.to_s)
+      if has?(method)
+        get_value(method)
+      else
+        super
+      end
     end
 
     def to_a
