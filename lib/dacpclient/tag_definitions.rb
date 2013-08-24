@@ -136,6 +136,7 @@ module DACPClient
     tag 'aeFP', :bool, 'com.apple.itunes.req-fplay'
     tag 'aeHV', :bool, 'com.apple.itunes.has-video'
     tag 'caia', :bool, 'dacp.isavailiable'
+    tag 'caip', :bool, 'dacp.isplaying'
     tag 'ceVO', :bool, 'com.apple.itunes.voting-enabled'
     tag 'aeSV', :version, 'com.apple.itunes.music-sharing-version'
     tag 'mpro', :version, 'dmap.protocolversion'

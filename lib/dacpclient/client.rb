@@ -184,6 +184,10 @@ module DACPClient
       do_action(:setproperty, 'dmcp.volume' => volume)
     end
 
+    def getspeakers
+      do_action(:getspeakers)
+    end
+
     def ctrl_int
       do_action('ctrl-int', {}, true)
     end
