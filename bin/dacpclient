@@ -11,10 +11,15 @@ require 'io/console'
 class CLIClient
   def initialize
     @config = {}
-    @config['client_name'] ||= "CLIClient (#{Socket.gethostname})"
+    @config['client_name'] ||= "DACPClient (#{Socket.gethostname})"
     load_config
 
     @client = DACPClient::Client.new(@config['client_name'], 'localhost', 3689)
+    if @config['guid'].nil? || @config['guid'] !~ /^[a-f0-9]{16}$/
+      @config['guid'] = @client.get_guid
+      save_config
+    end
+    @client.guid = @config['guid']
     @login = false
   end
 

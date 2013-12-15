@@ -9,11 +9,11 @@ module DACPClient
 
     MDNS_TYPE = '_touch-remote._tcp'.freeze
 
-    def initialize(name, host, port = 1024)
-      @name = name
+    def initialize(client, host, port = 1024)
+      @name = client.name
       @port = port
       @host = host
-      @pair = Client.get_guid(@name)
+      @pair = client.get_guid
       @pin = [0, 0, 0, 0]
       @device_type = 'iPod'
       super port, host

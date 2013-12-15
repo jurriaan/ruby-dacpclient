@@ -51,16 +51,16 @@ module DACPClient
       @hsgid = response['sgid']
     end
 
-    def pair(pin)
-      pairingserver = PairingServer.new(@name, '0.0.0.0', 1024)
-      pairingserver.pin = pin
-      pairingserver.start
+    def get_guid
+      return @guid unless @guid.nil?
+      d = Digest::SHA2.hexdigest(@name)
+      d[0..15]
     end
 
-    def self.get_guid(name)
-      return @guid unless @guid.nil?
-      d = Digest::SHA2.hexdigest(name)
-      d[0..15]
+    def pair(pin)
+      pairingserver = PairingServer.new(self, '0.0.0.0', 1024)
+      pairingserver.pin = pin
+      pairingserver.start
     end
 
     def serverinfo
@@ -70,7 +70,7 @@ module DACPClient
     def login
       response = nil
       if @hsgid.nil?
-        pairing_guid = '0x' + Client.get_guid(@name)
+        pairing_guid = '0x' + get_guid
         response = do_action(:login, 'pairing-guid' => pairing_guid)
       else
         response = do_action(:login, 'hasFP' => '1')
