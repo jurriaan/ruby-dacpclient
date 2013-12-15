@@ -3,5 +3,3 @@ MethodLength:
   Enabled: false
 Documentation:
   Enabled: false
-AvoidClassVars:
-  Enabled: false

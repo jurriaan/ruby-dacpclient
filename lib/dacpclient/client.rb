@@ -1,23 +1,18 @@
-require 'rubygems'
-require 'bundler'
-Bundler.setup(:default)
 require 'faraday'
 require 'digest'
 require 'net/http'
+require 'uri'
+require 'cgi'
+require 'plist'
 require 'dacpclient/pairingserver'
 require 'dacpclient/dmapparser'
 require 'dacpclient/dmapbuilder'
 require 'dacpclient/bonjour'
-require 'uri'
-require 'cgi'
-require 'plist'
 
 module DACPClient
   # The Client class handles communication with the server
   class Client
-
     attr_accessor :guid, :hsgid
-
     attr_reader :name, :host, :port, :session_id
 
     HOME_SHARING_HOST = 'https://homesharing.itunes.apple.com'
@@ -76,9 +71,9 @@ module DACPClient
       response = nil
       if @hsgid.nil?
         pairing_guid = '0x' + Client.get_guid(@name)
-        response = do_action(:login, { 'pairing-guid' => pairing_guid })
+        response = do_action(:login, 'pairing-guid' => pairing_guid)
       else
-        response = do_action(:login, { 'hasFP' => '1' })
+        response = do_action(:login, 'hasFP' => '1')
       end
       @session_id = response[:mlid]
       response
@@ -199,12 +194,12 @@ module DACPClient
     end
 
     def queue(id)
-      do_action('playqueue-edit', { command: 'add',
-                                    query: "\'dmap.itemid:#{id}\'" })
+      do_action('playqueue-edit', command: 'add',
+                                  query: "\'dmap.itemid:#{id}\'")
     end
 
     def clear_queue
-      do_action('playqueue-edit', { command: 'clear' })
+      do_action('playqueue-edit', command: 'clear')
     end
 
     def list_queue
@@ -233,7 +228,7 @@ module DACPClient
     end
 
     def now_playing_artwork(width = 320, height = 320)
-      do_action(:nowplayingartwork, { mw: width, mh: height })
+      do_action(:nowplayingartwork, mw: width, mh: height)
     end
 
     def search(db, container, search, type = nil)
@@ -283,7 +278,7 @@ module DACPClient
 
     def parse_result(result)
       if !result.success?
-        raise DACPForbiddenError.new(result)
+        fail DACPForbiddenError, result
       elsif result.headers['Content-Type'] == 'application/x-dmap-tagged'
         DMAPParser.parse(result.body)
       else

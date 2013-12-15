@@ -26,14 +26,14 @@ module DACPClient
             return @result = @dmap_stack.pop
           end
         else
-          raise "Tag #{method} is not a container type"
+          fail "Tag #{method} is not a container type"
         end
       else
         if @dmap_stack.length > 0
           args = args.size > 1 ? args : args.first
           @dmap_stack.last.value << Tag.new(tag, args)
         else
-          raise 'Cannot build DMAP without a valid container'
+          fail 'Cannot build DMAP without a valid container'
         end
       end
     end

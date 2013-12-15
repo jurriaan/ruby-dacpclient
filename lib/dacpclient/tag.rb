@@ -12,7 +12,7 @@ module DACPClient
       value = self.value
       value = case type.type
               when :container
-                value.reduce('') { |a, e| a += e.to_dmap }
+                value.reduce('') { |a, e| a + e.to_dmap }
               when :byte
                 DMAPConverter.byte_to_bin value
               when :uint16, :short

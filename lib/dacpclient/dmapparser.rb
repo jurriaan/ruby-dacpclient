@@ -5,7 +5,6 @@ require 'stringio'
 module DACPClient
   # The DMAPParser class parses DMAP responses
   class DMAPParser
-
     def self.parse(response)
       return nil if response.nil? || response.length < 8
       response = StringIO.new(response)

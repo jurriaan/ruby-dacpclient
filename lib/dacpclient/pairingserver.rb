@@ -54,14 +54,14 @@ module DACPClient
     private
 
     def text_record
-      DNSSD::TextRecord.new({
+      DNSSD::TextRecord.new(
         'DvNm' => @name,
         'Revm' => '10000',
         'DvTy' => @device_type,
         'RemN' => 'Remote',
         'txtvers' => '1',
         'Pair' => @pair
-      })
+      )
     end
 
     def generate_pairing_string(pair, name, device_type)
