@@ -3,3 +3,7 @@ MethodLength:
   Enabled: false
 Documentation:
   Enabled: false
+ClassVars:
+  Enabled: false
+ClassLength:
+  Enabled: false
