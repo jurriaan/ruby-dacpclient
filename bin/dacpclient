@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require 'dacpclient'
-require 'english'
+require 'English'
 require 'socket'
 require 'yaml'
 require 'yaml/dbm'
