@@ -51,7 +51,7 @@ module DACPClient
       @hsgid = response['sgid']
     end
 
-    def get_guid
+    def guid
       return @guid unless @guid.nil?
       d = Digest::SHA2.hexdigest(@name)
       d[0..15]
@@ -70,7 +70,7 @@ module DACPClient
     def login
       response = nil
       if @hsgid.nil?
-        pairing_guid = '0x' + get_guid
+        pairing_guid = '0x' + guid
         response = do_action(:login, 'pairing-guid' => pairing_guid)
       else
         response = do_action(:login, 'hasFP' => '1')
@@ -118,12 +118,11 @@ module DACPClient
       do_action(:setproperty, 'dacp.playingtime' => ms)
     end
 
-    def get_position
+    def position
       response = do_action(:getproperty, properties: 'dacp.playingtime')
       response['cast'] - response['cant']
     end
 
-    alias_method :position, :get_position
     alias_method :position=, :seek
 
     def status(wait = false)
@@ -149,37 +148,34 @@ module DACPClient
 
     alias_method :previous, :prev
 
-    def get_volume
+    def volume
       response = do_action(:getproperty, properties: 'dmcp.volume')
       response[:cmvo]
     end
 
-    def set_volume(volume)
+    def volume=(volume)
       do_action(:setproperty, 'dmcp.volume' => volume)
     end
 
-    alias_method :volume, :get_volume
-    alias_method :volume=, :set_volume
-
-    def get_repeat
+    def repeat
       response = do_action(:getproperty, properties: 'dacp.repeatstate')
       response[:carp]
     end
 
-    def set_repeat(volume)
-      do_action(:setproperty, 'dmcp.volume' => volume)
+    def repeat=(repeatstate)
+      do_action(:setproperty, 'dacp.repeatstate' => repeatstate)
     end
 
-    def get_shuffle
+    def shuffle
       response = do_action(:getproperty, properties: 'dmcp.shufflestate')
       response[:cash]
     end
 
-    def set_shuffle(volume)
-      do_action(:setproperty, 'dmcp.volume' => volume)
+    def shuffle=(shufflestate)
+      do_action(:setproperty, 'dmcp.shufflestate' => shufflestate)
     end
 
-    def getspeakers
+    def speakers
       do_action(:getspeakers)
     end
 

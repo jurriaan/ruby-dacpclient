@@ -15,7 +15,7 @@ class CLIClient
 
     @client = DACPClient::Client.new(@config['client_name'], 'localhost', 3689)
     if @config['guid'].nil? || @config['guid'] !~ /^[a-f0-9]{16}$/
-      @config['guid'] = @client.get_guid
+      @config['guid'] = @client.guid
       save_config
     end
     @client.guid = @config['guid']
