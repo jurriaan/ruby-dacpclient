@@ -11,6 +11,8 @@ Look at the [bin/dacpclient](https://github.com/jurriaan/ruby-dacpclient/blob/ma
 
 ## Installation
 
+On Linux you need the avahi-dnssd-compat package (`libavahi-compat-libdnssd-dev` on Debian/Ubuntu).
+
 Add this line to your application's Gemfile:
 
     gem 'dacpclient'
