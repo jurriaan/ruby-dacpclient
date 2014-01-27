@@ -28,7 +28,7 @@ Or install it yourself using:
 See [bin/dacpclient](https://github.com/jurriaan/ruby-dacpclient/blob/master/bin/dacpclient)
 
     Usage: dacpclient [command]
-    (c) 2013 Jurriaan Pruis <email@jurriaanpruis.nl>
+    (c) 2014 Jurriaan Pruis <email@jurriaanpruis.nl>
 
     Where command is one of the following:
     status
