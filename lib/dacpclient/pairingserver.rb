@@ -34,7 +34,7 @@ module DACPClient
 
     def self.generate_pin_challenge(pair, pin)
       pin_string = pin.map { |i| "#{i}\x00" }.join
-      Digest::MD5.hexdigest(pair + pin_string)
+      Digest::MD5.hexdigest(pair.upcase + pin_string)
     end
 
     def serve(client)
@@ -59,7 +59,7 @@ module DACPClient
         'DvTy' => @device_type,
         'RemN' => 'Remote',
         'txtvers' => '1',
-        'Pair' => @pair
+        'Pair' => @pair.upcase
       )
     end
 

@@ -54,7 +54,7 @@ module DACPClient
     def guid
       return @guid unless @guid.nil?
       d = Digest::SHA2.hexdigest(@name)
-      d[0..15]
+      d[0..15].upcase
     end
 
     def pair(pin)
