@@ -36,7 +36,7 @@ module DACPClient
 
     def method_missing(method, *arguments, &block)
       if method =~ /(.*)\?$/
-        has?(method)
+        has?($1)
       elsif has?(method)
         get_value(method)
       else
