@@ -3,7 +3,6 @@ require 'dacpclient'
 require 'English'
 require 'socket'
 require 'yaml'
-require 'yaml/dbm'
 require 'fileutils'
 require 'io/console'
 
