@@ -38,6 +38,18 @@ module DACPClient
       @client = Faraday.new(url: @uri.to_s)
     end
 
+    [:play, :playpause, :stop, :pause, 
+     :nextitem, :previtem, :getspeakers].each do |action_name|
+      define_method action_name do 
+        do_action action_name
+      end
+    end
+    
+    alias_method :previous, :previtem
+    alias_method :prev, :previtem
+    alias_method :next, :nextitem
+    alias_method :speakers, :getspeakers
+
     def setup_home_sharing(user, password)
       hs_client = Faraday.new(url: HOME_SHARING_HOST)
       result = hs_client.post do |request|
@@ -93,22 +105,6 @@ module DACPClient
       do_action('content-codes', {}, true)
     end
 
-    def play
-      do_action(:play)
-    end
-
-    def playpause
-      do_action(:playpause)
-    end
-
-    def stop
-      do_action(:stop)
-    end
-
-    def pause
-      do_action(:pause)
-    end
-
     def track_length
       response = do_action(:getproperty, properties: 'dacp.playingtime')
       response.cast? ? response['cast'] : 0
@@ -138,16 +134,6 @@ module DACPClient
       end
     end
 
-    def next
-      do_action(:nextitem)
-    end
-
-    def prev
-      do_action(:previtem)
-    end
-
-    alias_method :previous, :prev
-
     def volume
       response = do_action(:getproperty, properties: 'dmcp.volume')
       response[:cmvo]
@@ -173,10 +159,6 @@ module DACPClient
 
     def shuffle=(shufflestate)
       do_action(:setproperty, 'dmcp.shufflestate' => shufflestate)
-    end
-
-    def speakers
-      do_action(:getspeakers)
     end
 
     def ctrl_int
@@ -271,7 +253,7 @@ module DACPClient
 
       parse_result result
     end
-
+    
     def parse_result(result)
       if !result.success?
         fail DACPForbiddenError, result
