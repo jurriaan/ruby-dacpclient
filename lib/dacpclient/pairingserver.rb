@@ -13,7 +13,7 @@ module DACPClient
       @name = client.name
       @port = port
       @host = host
-      @pair = client.get_guid
+      @pair = client.guid
       @pin = [0, 0, 0, 0]
       @device_type = 'iPod'
       super port, host
@@ -34,21 +34,20 @@ module DACPClient
 
     def self.generate_pin_challenge(pair, pin)
       pin_string = pin.map { |i| "#{i}\x00" }.join
-      Digest::MD5.hexdigest(pair + pin_string).upcase
+      Digest::MD5.hexdigest(pair + pin_string)
     end
 
     def serve(client)
-      code = client.gets.match(/pairingcode=([^&]*)/)[1]
-      correct = code == @expected
-      if correct
+      if client.gets =~ /pairingcode=#{@expected}/i
         client.print "HTTP/1.1 200 OK\r\n" +
                      "Content-Length: #{@pairing_string.length}\r\n\r\n"
         client.print @pairing_string
+        client.close
+        stop
       else
         client.print "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
+        client.close
       end
-      client.close
-      stop if correct
     end
 
     private
