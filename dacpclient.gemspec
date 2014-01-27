@@ -19,15 +19,15 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
   spec.extra_rdoc_files = ['README.md', 'LICENSE']
 
+  spec.add_runtime_dependency 'faraday', '~> 0.9.0'
   spec.add_runtime_dependency 'dnssd', '~> 2.0'
-  spec.add_runtime_dependency 'faraday', '~> 0.8.8'
   spec.add_runtime_dependency 'plist', '~> 3.1.0'
 
   spec.add_development_dependency 'yard'
   spec.add_development_dependency 'redcarpet'
   spec.add_development_dependency 'github-markup'
   spec.add_development_dependency 'minitest', '~> 5.2.0'
-  spec.add_development_dependency 'rubocop', '~> 0.15.0'
+  spec.add_development_dependency 'rubocop', '~> 0.17.0'
   spec.add_development_dependency 'rake'
 
   spec.required_ruby_version = '>= 2.0.0'
