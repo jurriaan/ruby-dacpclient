@@ -11,10 +11,11 @@ class CLIClient
   def initialize
     @config = {}
     @config['client_name'] ||= "DACPClient (#{Socket.gethostname})"
+    @config['host'] ||= 'localhost'
     load_config
 
-    @client = DACPClient::Client.new(@config['client_name'], 'localhost', 3689)
-    if @config['guid'].nil? || @config['guid'] !~ /^[a-f0-9]{16}$/
+    @client = DACPClient::Client.new(@config['client_name'], @config['host'], 3689)
+    if @config['guid'].nil? || @config['guid'] !~ /^[A-F0-9]{16}$/
       @config['guid'] = @client.guid
       save_config
     end
@@ -90,6 +91,13 @@ class CLIClient
     puts "\n\n"
     puts "Got your Home Sharing GUID (#{guid}). Logging in.."
     login
+  end
+  
+  def hostname
+    puts "Please enter a new hostname to connect to:"
+    @config['host'] = $stdin.gets.strip
+    save_config
+    status
   end
 
   def play
