@@ -97,6 +97,7 @@ class CLIClient
     puts "Please enter a new hostname to connect to:"
     @config['host'] = $stdin.gets.strip
     save_config
+    @client = DACPClient::Client.new(@config['client_name'], @config['host'], 3689)
     status
   end
 
