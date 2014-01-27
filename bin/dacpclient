@@ -43,9 +43,13 @@ class CLIClient
       artist = status.cana
       album = status.canl
       playstatus = status.caps != 4 ? '❙❙' : '▶ '
-      remaining = status.cant
-      total = status.cast
-      current = total - remaining
+      current = 0
+      total = 0
+      if status.cast? && status.cant?
+        remaining = status.cant
+        total = status.cast
+        current = total - remaining
+      end
       puts "[#{format_time(current)}/#{format_time(total)}] #{playstatus} #{name} - #{artist} (#{album})"
     end
   end
@@ -63,9 +67,13 @@ class CLIClient
           artist = status.cana
           album = status.canl
           playstatus = status.caps != 4 ? '❙❙' : '▶ '
-          total = status.cast
-          remaining = status.cant
-          current = total - remaining + [((Time.now.to_f * 1000.0) - status_time), 0].max
+          current = 0
+          total = 0
+          if status.cast? && status.cant?
+            remaining = status.cant
+            total = status.cast
+            current = total - remaining + [((Time.now.to_f * 1000.0) - status_time), 0].max
+          end
           print "\r\033[K[#{format_time(current)}/#{format_time(total)}] #{playstatus} #{name} - #{artist} (#{album})"
         end
       end

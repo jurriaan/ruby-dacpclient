@@ -111,7 +111,7 @@ module DACPClient
 
     def track_length
       response = do_action(:getproperty, properties: 'dacp.playingtime')
-      response['cast']
+      response.cast? ? response['cast'] : 0
     end
 
     def seek(ms)
@@ -120,7 +120,7 @@ module DACPClient
 
     def position
       response = do_action(:getproperty, properties: 'dacp.playingtime')
-      response['cast'] - response['cant']
+      response.cast? ? (response['cast'] - response['cant']) : 0
     end
 
     alias_method :position=, :seek
