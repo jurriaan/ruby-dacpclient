@@ -22,7 +22,7 @@ module DACPClient
       'Viewer-Only-Client' => '1',
       # 'Accept-Encoding' => 'gzip',
       'Connection' => 'keep-alive',
-      'User-Agent' => 'Remote/2.0'
+      'User-Agent' => 'RubyDACPClient/' + VERSION
     }.freeze
 
     def initialize(name, host = 'localhost', port = 3689)
