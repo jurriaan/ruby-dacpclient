@@ -7,7 +7,7 @@ require 'plist'
 require 'dacpclient/pairingserver'
 require 'dacpclient/dmapparser'
 require 'dacpclient/dmapbuilder'
-require 'dacpclient/bonjour'
+require 'dacpclient/version'
 
 module DACPClient
   # The Client class handles communication with the server
