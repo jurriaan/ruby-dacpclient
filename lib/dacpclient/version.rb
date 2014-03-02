@@ -1,4 +1,4 @@
 # The DACPClient module
 module DACPClient
-  VERSION = '0.2.6'
+  VERSION = '0.2.9'
 end
