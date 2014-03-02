@@ -7,3 +7,6 @@ ClassVars:
   Enabled: false
 ClassLength:
   Enabled: false
+AllCops:
+  Excludes:
+    - flatter_params_encoder.rb

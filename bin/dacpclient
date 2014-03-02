@@ -1,98 +1,71 @@
 #!/usr/bin/env ruby
+$LOAD_PATH.unshift(File.join(__dir__, '../lib/'))
 require 'dacpclient'
 require 'English'
 require 'socket'
 require 'yaml'
 require 'fileutils'
 require 'io/console'
+require 'thor'
 
 # This is the CLI DACP Client. Normally installed as `dacpclient`
-class CLIClient
-  def initialize
+class CLIClient < Thor
+  package_name :dacpclient
+  include Thor::Actions
+  def initialize(*)
     @config = {}
     @config['client_name'] ||= "DACPClient (#{Socket.gethostname})"
     @config['host'] ||= 'localhost'
+    @config['known_databases'] ||= ['']
+
     load_config
 
-    @client = DACPClient::Client.new(@config['client_name'], @config['host'], 3689)
     if @config['guid'].nil? || @config['guid'] !~ /^[A-F0-9]{16}$/
-      @config['guid'] = @client.guid
+      guid = Digest::SHA2.hexdigest(@config['client_name'])[0..15].upcase
+      @config['guid'] = guid
       save_config
     end
+
+    browser = DACPClient::Browser.new
+    browser.browse(false)
+    database = browser.devices.find do |device|
+      @config['known_databases'].include? device.database_id
+    end
+
+    unless database
+      pin = 4.times.map { Random.rand(10) } if pin.nil?
+      puts 'Cannot find paired Libraries, waiting for a pair request..'
+      puts "Pincode: #{pin}"
+      pairserver = DACPClient::PairingServer.new(@config['client_name'],
+                                                 @config['guid'])
+      pairserver.pin = pin
+      database = pairserver.start
+      @config['known_databases'] << database.database_id
+      save_config
+    end
+    @client = DACPClient::Client.new(@config['client_name'], database.host,
+                                     database.port)
     @client.guid = @config['guid']
     @login = false
+
+    super
   end
 
-  def parse_arguments(arguments)
-    if arguments.length > 0 && !([:parse_arguments].include?(arguments.first.to_sym)) && self.class.instance_methods(false).include?(arguments.first.to_sym)
-      method = arguments.first.to_sym
-      send method
-      status unless [:help, :usage, :status, :status_ticker].include?(method)
-    else
-      usage
-    end
-  end
-
+  desc :status, 'Shows the status of the DACP server'
+  method_options ticker: :boolean
   def status
     login
-    status = @client.status
-    if status.caps == 2
-      puts '[STOPPED]'
-    else
-      name = status.cann
-      artist = status.cana
-      album = status.canl
-      playstatus = status.caps != 4 ? '❙❙' : '▶ '
-      current = 0
-      total = 0
-      if status.cast? && status.cant?
-        remaining = status.cant
-        total = status.cast
-        current = total - remaining
-      end
-      puts "[#{format_time(current)}/#{format_time(total)}] #{playstatus} #{name} - #{artist} (#{album})"
-    end
+    return status_ticker if options[:ticker]
+    show_status
   end
 
-  def status_ticker
-    login
-    status = nil
-    status_time = 0
-    repeat_every(1) do
-      unless status.nil?
-        if status.caps == 2
-          print "\r\033[K[STOPPED]"
-        else
-          name = status.cann
-          artist = status.cana
-          album = status.canl
-          playstatus = status.caps != 4 ? '❙❙' : '▶ '
-          current = 0
-          total = 0
-          if status.cast? && status.cant?
-            remaining = status.cant
-            total = status.cast
-            current = total - remaining + [((Time.now.to_f * 1000.0) - status_time), 0].max
-          end
-          print "\r\033[K[#{format_time(current)}/#{format_time(total)}] #{playstatus} #{name} - #{artist} (#{album})"
-        end
-      end
-    end
-    loop do
-      status = @client.status true
-      status_time = Time.now.to_f * 1000.0
-    end
-  end
-
+  desc :home_sharing, 'Setup Home Sharing (Not fully functional)'
   def home_sharing
-    puts "Setting up Home Sharing. Saving Home Sharing GUID to ~/.dacpclient/config.yml"
+    puts 'Setting up Home Sharing. Saving Home Sharing GUID to ' + config_file
     puts "\nPlease enter your Apple ID credentials:"
-    print "Apple ID (e-mail address): "
-    email = $stdin.gets.strip
-    print "Password: "
-    password = $stdin.noecho(&:gets).chomp
+    email = ask('Apple ID (e-mail address):').strip
+    password = ask('Password:')
     guid = @client.setup_home_sharing(email, password)
-    password = nil
     @config['appleid'] = email
     @config['hsgid'] = guid
     save_config
@@ -100,89 +73,139 @@ class CLIClient
     puts "Got your Home Sharing GUID (#{guid}). Logging in.."
     login
   end
-  
+
+  desc :hostname, 'Set the hostname'
   def hostname
-    puts "Please enter a new hostname to connect to:"
-    @config['host'] = $stdin.gets.strip
+    @config['host'] = ask('Please enter a new hostname to connect to:').strip
     save_config
-    @client = DACPClient::Client.new(@config['client_name'], @config['host'], 3689)
+    @client = DACPClient::Client.new(@config['client_name'], @config['host'],
+                                     3689)
     status
   end
 
+  desc :play, 'Start playing'
   def play
     login
     @client.play
   end
 
+  desc :pause, 'Pause Playing'
   def pause
     login
     @client.pause
   end
 
+  desc :playpause, 'Toggle Playing'
   def playpause
     login
     @client.playpause
   end
 
+  desc :next, 'Go to next item'
   def next
     login
     @client.next
   end
 
+  desc :prev, 'Go to previous item'
+  map previous: :prev
   def prev
     login
     @client.prev
   end
 
-  def databases
+  desc :playlists, 'Show the playlists'
+  def playlists
     login
-    puts @client.databases
-  end
-
-  def playqueue
-    login
-    puts @client.list_queue
-  end
-
-  def upnext
-    login
-    items = @client.list_queue.mlcl.to_a.select {|i| i.type.tag == 'mlit' }
-    puts 'Up next:'
-    puts '--------'
-    puts
-    items.each do |item|
-      name = item.ceQn
-      artist = item.ceQr
-      album = item.ceQa
-      puts "#{name} - #{artist} (#{album})"
+    playlist_items = @client.playlists
+    puts 'Playlists:'
+    puts '----------'
+    playlist_items.each do |playlist|
+      print '  ' unless playlist.base_playlist?
+      puts "#{playlist.name} (#{playlist.count})"
     end
     puts
   end
 
+  desc :upnext, 'Show what\'s up next'
+  def upnext
+    login
+    items = @client.list_queue.items
+    puts 'Up next:'
+    puts '--------'
+    puts
+    items.each do |item|
+      title = item.title
+      artist = item.artist
+      album = item.album
+      puts "#{title} - #{artist} (#{album}) [#{format_time(item.song_time)}]"
+    end
+    puts
+  end
+
+  desc :stop, 'Stop playing'
   def stop
     login
     @client.stop
   end
 
+  # rubocop:disable Debugger
+  desc :debug, 'Debuggin\''
   def debug
     login
-    require 'pry'
-    binding.pry
+    begin
+      require 'pry'
+      binding.pry
+    rescue
+      puts 'Please install PRY to be able to debug things.'
+    end
   end
+  # rubocop:enable Debugger
 
-  def usage
-    puts "Usage: #{$PROGRAM_NAME} [command]"
-    puts "(c) #{Time.now.year} Jurriaan Pruis <email@jurriaanpruis.nl>"
-    puts
-    puts 'Where command is one of the following:'
-
-    puts CLIClient.instance_methods(false).reject { |m| [:parse_arguments].include?(m)  }
+  desc :version, 'Show DACPClient Version'
+  def version
+    puts "DACPClient v#{DACPClient::VERSION}"
+    puts "using DMAPParser v#{DMAPParser::VERSION}"
+    print "DACPClient and DMAPParser are Copyright (c) "
+    puts "#{Time.now.year} Jurriaan Pruis"
   end
-
-  alias_method :previous, :prev
-  alias_method :help, :usage
 
   private
+
+  def show_status(status = @client.status, start_time = nil)
+    name = status.title
+    artist = status.artist
+    album = status.album
+    playstatus = status.playing? ? '▶ ' : '❙❙'
+    current = 0
+    total = 0
+    extra_time = 0
+    extra_time = Time.now.to_f * 1000.0 - start_time if start_time
+    if status.song_length? && status.song_remaining_time?
+      total = status.song_length
+      current = status.song_position + extra_time
+    end
+    print "[#{format_time(current)}/#{format_time(total)}]"
+    puts " #{playstatus} #{name} - #{artist} (#{album})"
+  end
+
+  def status_ticker
+    status = nil
+    start_time = nil
+    repeat_every(1) do
+      unless status.nil?
+        if status.stopped?
+          print "\r\033[K[STOPPED]"
+        else
+          show_status(status, start_time)
+        end
+      end
+    end
+    loop do
+      status = @client.status true
+      start_time = Time.now.to_f * 1000.0
+    end
+  end
 
   def login
     return if @login
@@ -193,10 +216,14 @@ class CLIClient
       @client.login
     end
     @login = true
+    if @client.host != @config['host']
+      @config['host'] = @client.host
+      save_config
+    end
   end
 
   def format_time(millis)
-    seconds, millis = millis.divmod(1000)
+    seconds, _ = millis.divmod(1000)
     minutes, seconds = seconds.divmod(60)
     hours, minutes = minutes.divmod(60)
     if hours == 0
@@ -221,22 +248,25 @@ class CLIClient
     File.join(ENV['HOME'], '.dacpclient')
   end
 
+  def config_file
+    File.join(config_dir, 'config.yml')
+  end
+
   def load_config
     FileUtils.mkdir_p(config_dir)
-    config_file = File.join(config_dir,'config.yml')
-    if File.exists? config_file
-      @config.merge! YAML.load_file(config_file)
+    if File.exist? config_file
+      data = YAML.load_file(config_file)
+      @config.merge!(data) if data.is_a?(Hash)
     else
       save_config
     end
   end
 
   def save_config
-    File.open(File.join(config_dir,'config.yml'), 'w') do |out|
+    File.open(File.join(config_dir, 'config.yml'), 'w') do |out|
       YAML.dump(@config, out)
     end
   end
 end
 
-cli = CLIClient.new
-cli.parse_arguments(Array(ARGV))
+CLIClient.start

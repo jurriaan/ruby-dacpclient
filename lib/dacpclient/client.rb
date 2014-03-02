@@ -1,18 +1,25 @@
-require 'faraday'
 require 'digest'
-require 'net/http'
 require 'uri'
-require 'cgi'
 require 'plist'
+require 'dmapparser'
+require 'faraday'
+require 'dacpclient/faraday/flatter_params_encoder'
 require 'dacpclient/pairingserver'
-require 'dacpclient/dmapparser'
-require 'dacpclient/dmapbuilder'
+require 'dacpclient/browser'
 require 'dacpclient/version'
+require 'dacpclient/model'
+require 'dacpclient/models/status'
+require 'dacpclient/models/pair_info'
+require 'dacpclient/models/playlist'
+require 'dacpclient/models/playlists'
+require 'dacpclient/models/play_queue_item'
+require 'dacpclient/models/play_queue'
 
 module DACPClient
   # The Client class handles communication with the server
   class Client
-    attr_accessor :guid, :hsgid
+    attr_accessor :hsgid
+    attr_writer :guid
     attr_reader :name, :host, :port, :session_id
 
     HOME_SHARING_HOST = 'https://homesharing.itunes.apple.com'
@@ -26,25 +33,23 @@ module DACPClient
     }.freeze
 
     def initialize(name, host = 'localhost', port = 3689)
-      @client = Net::HTTP.new(host, port)
       @name = name
       @host = host
       @port = port
 
       @session_id = nil
       @hsgid = nil
-      @mediarevision = 1
-      @uri = URI::HTTP.build(host: @host, port: @port)
-      @client = Faraday.new(url: @uri.to_s)
+      @media_revision = 1
+      setup_connection
     end
 
-    [:play, :playpause, :stop, :pause, 
+    [:play, :playpause, :stop, :pause,
      :nextitem, :previtem, :getspeakers].each do |action_name|
-      define_method action_name do 
+      define_method action_name do
         do_action action_name
       end
     end
-    
+
     alias_method :previous, :previtem
     alias_method :prev, :previtem
     alias_method :next, :nextitem
@@ -70,22 +75,22 @@ module DACPClient
     end
 
     def pair(pin)
-      pairingserver = PairingServer.new(self, '0.0.0.0', 1024)
+      pairingserver = PairingServer.new(name, guid)
       pairingserver.pin = pin
       pairingserver.start
     end
 
     def serverinfo
-      do_action('server-info', {}, true)
+      do_action('server-info', clean_url: true)
     end
 
     def login
       response = nil
       if @hsgid.nil?
         pairing_guid = '0x' + guid
-        response = do_action(:login, 'pairing-guid' => pairing_guid)
+        response = do_action(:login,  :'pairing-guid' => pairing_guid)
       else
-        response = do_action(:login, 'hasFP' => '1')
+        response = do_action(:login, hasFP: 1)
       end
       @session_id = response[:mlid]
       response
@@ -93,16 +98,22 @@ module DACPClient
 
     def pair_and_login(pin = nil)
       login
-    rescue DACPForbiddenError => e
+    rescue DACPForbiddenError, Faraday::ConnectionFailed => e
       pin = 4.times.map { Random.rand(10) } if pin.nil?
-      warn "#{e.result.status} error: Cannot login, starting pairing process"
+      if e.instance_of? DACPForbiddenError
+        message = e.result.status
+      else
+        message = e
+      end
+      warn "#{message} error: Cannot login, starting pairing process"
       warn "Pincode: #{pin}"
-      pair(pin)
+      @host = pair(pin).host
+      setup_connection
       retry
     end
 
     def content_codes
-      do_action('content-codes', {}, true)
+      do_action('content-codes', clean_url: true)
     end
 
     def track_length
@@ -122,9 +133,10 @@ module DACPClient
     alias_method :position=, :seek
 
     def status(wait = false)
-      revision = wait ? @mediarevision : 1
-      result = do_action(:playstatusupdate, 'revision-number' => revision)
-      @mediarevision = result[:cmsr]
+      revision = wait ? @media_revision : 1
+      result = do_action(:playstatusupdate, :'revision-number' => revision,
+                                            model: Status)
+      @media_revision = result.media_revision
       result
     rescue Faraday::Error::TimeoutError => e
       if wait
@@ -140,7 +152,7 @@ module DACPClient
     end
 
     def volume=(volume)
-      do_action(:setproperty, 'dmcp.volume' => volume)
+      do_action(:setproperty, :'dmcp.volume' => volume)
     end
 
     def repeat
@@ -162,12 +174,12 @@ module DACPClient
     end
 
     def ctrl_int
-      do_action('ctrl-int', {}, true)
+      do_action('ctrl-int', clean_url: true)
     end
 
     def logout
       do_action(:logout)
-      @mediarevision = 1
+      @media_revision = 1
       @session_id = nil
     end
 
@@ -181,35 +193,37 @@ module DACPClient
     end
 
     def list_queue
-      do_action('playqueue-contents')
+      do_action('playqueue-contents', model: PlayQueue)
     end
 
     def databases
-      do_action('databases', {}, true)
+      do_action('databases', clean_url: true)
     end
 
-    def playlists(db)
-      do_action("databases/#{db}/containers", {}, true)
+    def playlists(db = default_db)
+      do_action("databases/#{db.miid}/containers", clean_url: true,
+                                                   model: Playlists).items
     end
 
     def default_db
-      databases[:mlcl].to_a.find { |item| item.mdbk == 1 }
+      databases.mlcl.to_a.find { |item| item.mdbk == 1 }
     end
 
-    def default_playlist(db)
-      @client.playlists(72).mlcl.to_a.find { |item| item.abpl }
+    def default_playlist(db = default_db)
+      playlists(db).find { |item| item.base_playlist? }
     end
 
     def artwork(database, id, width = 320, height = 320)
       url = "databases/#{database}/items/#{id}/extra_data/artwork"
-      do_action(url, { mw: width, mh: height }, true)
+      do_action(url, { mw: width, mh: height }, clean_url: true)
     end
 
     def now_playing_artwork(width = 320, height = 320)
       do_action(:nowplayingartwork, mw: width, mh: height)
     end
 
-    def search(db, container, search, type = nil)
+    def search(search, type = nil, db = default_db,
+               container = default_playlist(default_db))
       search = URI.escape(search)
       types = {
         title: 'dmap.itemname',
@@ -225,40 +239,54 @@ module DACPClient
       end
 
       q = queries.join(',')
-      meta  = %w(dmap.itemname dmap.itemid daap.songartist daap.songalbumartist
+      q = '(' + q + ')' if queries.length > 1
+      meta  = %w(dmap.itemname dmap.itemid com.apple.itunes.has-chapter-data
                  daap.songalbum com.apple.itunes.cloud-id dmap.containeritemid
                  com.apple.itunes.has-video com.apple.itunes.itms-songid
                  com.apple.itunes.extended-media-kind dmap.downloadstatus
-                 daap.songdisabled).join(',')
-
-      url = "databases/#{db}/containers/#{container}/items"
-      do_action(url, { type: 'music', sort: 'album', query: q, meta: meta },
-                true)
+                 daap.songdisabled daap.songhasbeenplayed daap.songbookmark
+                 com.apple.itunes.is-hd-video daap.songlongcontentdescription
+                 daap.songtime daap.songuserplaycount daap.songartist
+                 com.apple.itunes.content-rating daap.songdatereleased
+                 com.apple.itunes.movie-info-xml daap.songalbumartist
+                 com.apple.itunes.extended-media-kind).join(',')
+      url = "databases/#{db.miid}/containers/#{container.miid}/items"
+      do_action(url, { query: q, type: 'music', sort: 'album', meta: meta,
+                       :'include-sort-headers' => 1 }, clean_url: true)
     end
 
     private
 
-    def do_action(action, params = {}, cleanurl = false)
+    def setup_connection
+      @uri = URI::HTTP.build(host: @host, port: @port)
+      Faraday::Utils.default_params_encoder = Faraday::FlatterParamsEncoder
+      @client = Faraday.new(@uri.to_s)
+    end
+
+    def do_action(action, clean_url: false, model: nil, **params)
       action = '/' + action.to_s
       unless @session_id.nil?
-        params['session-id'] = @session_id
-        action = '/ctrl-int/1' + action unless cleanurl
+        params['session-id'] = @session_id.to_s
+        action = '/ctrl-int/1' + action unless clean_url
       end
       params['hsgid'] = @hsgid unless @hsgid.nil?
+      
       result = @client.get do |request|
+        request.options.params_encoder = Faraday::FlatterParamsEncoder
         request.url action
         request.params = params
         request.headers.merge!(DEFAULT_HEADERS)
       end
 
-      parse_result result
+      parse_result result, model
     end
-    
-    def parse_result(result)
+
+    def parse_result(result, model)
       if !result.success?
         fail DACPForbiddenError, result
       elsif result.headers['Content-Type'] == 'application/x-dmap-tagged'
-        DMAPParser.parse(result.body)
+        res = DMAPParser::Parser.parse(result.body)
+        model ? model.new(res) : res
       else
         result.body
       end
