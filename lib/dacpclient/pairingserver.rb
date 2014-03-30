@@ -26,7 +26,7 @@ module DACPClient
       @pairing_string = generate_pairing_string(@pair, @name, @device_type)
       @expected = PairingServer.generate_pin_challenge(@pair, @pin)
       @service = DNSSD.register!(@name, MDNS_TYPE, 'local', @port, text_record)
-      @pairing_string
+
       PairInfo.new(DMAPParser::Parser.parse(@pairing_string))
       super
       join
@@ -51,7 +51,7 @@ module DACPClient
         device.host == peer_addr
       end
       if data =~ /pairingcode=#{@expected}/i && @peer
-        client.print "HTTP/1.1 200 OK\n" +
+        client.print "HTTP/1.1 200 OK\n" \
                      "Content-Length: #{@pairing_string.length}\n\n"
         client.print @pairing_string
         client.close

@@ -6,11 +6,11 @@ module DACPClient
   class Browser
     class Device < Struct.new(:host, :port, :text_records)
       def name
-        text_records['Machine Name'] || text_records['CtlN'] 
+        text_records['Machine Name'] || text_records['CtlN']
       end
 
       def database_id
-        text_records['Database ID'] || text_records['DbId'] 
+        text_records['Database ID'] || text_records['DbId']
       end
     end
 

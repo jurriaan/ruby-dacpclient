@@ -270,7 +270,7 @@ module DACPClient
         action = '/ctrl-int/1' + action unless clean_url
       end
       params['hsgid'] = @hsgid unless @hsgid.nil?
-      
+
       result = @client.get do |request|
         request.options.params_encoder = Faraday::FlatterParamsEncoder
         request.url action

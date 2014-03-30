@@ -166,7 +166,7 @@ class CLIClient < Thor
   def version
     puts "DACPClient v#{DACPClient::VERSION}"
     puts "using DMAPParser v#{DMAPParser::VERSION}"
-    print "DACPClient and DMAPParser are Copyright (c) "
+    print 'DACPClient and DMAPParser are Copyright (c) '
     puts "#{Time.now.year} Jurriaan Pruis"
   end
 
@@ -227,9 +227,9 @@ class CLIClient < Thor
     minutes, seconds = seconds.divmod(60)
     hours, minutes = minutes.divmod(60)
     if hours == 0
-      sprintf('%02d:%02d', minutes, seconds)
+      format('%02d:%02d', minutes, seconds)
     else
-      sprintf('%02d:%02d:%02d', hours, minutes, seconds)
+      format('%02d:%02d:%02d', hours, minutes, seconds)
     end
   end
 
