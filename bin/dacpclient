@@ -87,24 +87,28 @@ class CLIClient < Thor
   def play
     login
     @client.play
+    show_status
   end
 
   desc :pause, 'Pause Playing'
   def pause
     login
     @client.pause
+    show_status
   end
 
   desc :playpause, 'Toggle Playing'
   def playpause
     login
     @client.playpause
+    show_status
   end
 
   desc :next, 'Go to next item'
   def next
     login
     @client.next
+    show_status
   end
 
   desc :prev, 'Go to previous item'
@@ -112,6 +116,7 @@ class CLIClient < Thor
   def prev
     login
     @client.prev
+    show_status
   end
 
   desc :playlists, 'Show the playlists'
@@ -141,12 +146,14 @@ class CLIClient < Thor
       puts "#{title} - #{artist} (#{album}) [#{format_time(item.song_time)}]"
     end
     puts
+    show_status
   end
 
   desc :stop, 'Stop playing'
   def stop
     login
     @client.stop
+    show_status
   end
 
   # rubocop:disable Debugger
