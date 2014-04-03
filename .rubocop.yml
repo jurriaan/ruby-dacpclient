@@ -8,5 +8,5 @@ ClassVars:
 ClassLength:
   Enabled: false
 AllCops:
-  Excludes:
-    - flatter_params_encoder.rb
+  Exclude:
+    - lib/dacpclient/faraday/*

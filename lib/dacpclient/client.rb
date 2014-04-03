@@ -4,6 +4,7 @@ require 'plist'
 require 'dmapparser'
 require 'faraday'
 require 'dacpclient/faraday/flatter_params_encoder'
+require 'dacpclient/faraday/gzip'
 require 'dacpclient/pairingserver'
 require 'dacpclient/browser'
 require 'dacpclient/version'
@@ -22,12 +23,12 @@ module DACPClient
     attr_writer :guid
     attr_reader :name, :host, :port, :session_id
 
-    HOME_SHARING_HOST = 'https://homesharing.itunes.apple.com'
-    HOME_SHARING_PATH = '/WebObjects/MZHomeSharing.woa/wa/getShareIdentifiers'
+    HOME_SHARING_HOST = 'https://homesharing.itunes.apple.com'.freeze
+    HOME_SHARING_PATH = '/WebObjects/MZHomeSharing.woa/wa/getShareIdentifiers'.freeze
 
     DEFAULT_HEADERS = {
       'Viewer-Only-Client' => '1',
-      # 'Accept-Encoding' => 'gzip',
+      'Accept-Encoding' => 'gzip',
       'Connection' => 'keep-alive',
       'User-Agent' => 'RubyDACPClient/' + VERSION
     }.freeze
@@ -122,7 +123,7 @@ module DACPClient
     end
 
     def seek(ms)
-      do_action(:setproperty, 'dacp.playingtime' => ms)
+      set_property('dacp.playingtime', ms)
     end
 
     def position
@@ -152,7 +153,7 @@ module DACPClient
     end
 
     def volume=(volume)
-      do_action(:setproperty, :'dmcp.volume' => volume)
+      set_property('dmcp.volume', volume)
     end
 
     def repeat
@@ -161,7 +162,7 @@ module DACPClient
     end
 
     def repeat=(repeatstate)
-      do_action(:setproperty, 'dacp.repeatstate' => repeatstate)
+      set_property('dacp.repeatstate', repeatstate)
     end
 
     def shuffle
@@ -170,7 +171,7 @@ module DACPClient
     end
 
     def shuffle=(shufflestate)
-      do_action(:setproperty, 'dmcp.shufflestate' => shufflestate)
+      set_property('dmcp.shufflestate', shufflestate)
     end
 
     def ctrl_int
@@ -261,6 +262,11 @@ module DACPClient
       @uri = URI::HTTP.build(host: @host, port: @port)
       Faraday::Utils.default_params_encoder = Faraday::FlatterParamsEncoder
       @client = Faraday.new(@uri.to_s)
+      @client.use FaradayMiddleware::Gzip
+    end
+
+    def set_property(property, value)
+      do_action(:setproperty, property => value)
     end
 
     def do_action(action, clean_url: false, model: nil, **params)

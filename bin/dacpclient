@@ -157,15 +157,12 @@ class CLIClient < Thor
   end
 
   desc :volume, 'Get or set volume'
-  def volume(vol=nil)
+  def volume(vol = nil)
     login
 
-    if vol.nil?
-      puts "Volume: #{@client.volume}"
-    else
-      @client.volume  = vol.to_i
-      puts "Volume set to: #{@client.volume}"
-    end
+    @client.volume = vol.to_i unless vol.nil?
+    puts "Volume: #{@client.volume}"
+    show_status
   end
 
   # rubocop:disable Debugger
