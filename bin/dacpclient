@@ -156,6 +156,18 @@ class CLIClient < Thor
     show_status
   end
 
+  desc :volume, 'Get or set volume'
+  def volume(vol=nil)
+    login
+
+    if vol.nil?
+      puts "Volume: #{@client.volume}"
+    else
+      @client.volume  = vol.to_i
+      puts "Volume set to: #{@client.volume}"
+    end
+  end
+
   # rubocop:disable Debugger
   desc :debug, 'Debuggin\''
   def debug
