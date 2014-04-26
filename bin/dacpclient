@@ -110,11 +110,29 @@ class CLIClient < Thor
     playlist_items = @client.playlists
     puts 'Playlists:'
     puts '----------'
+    count = 0
+    num = Math.log10(playlist_items.length).floor + 1
     playlist_items.each do |playlist|
-      print '  ' unless playlist.base_playlist?
+      unless playlist.base_playlist?
+        printf("%#{num}d. ", count+=1)
+      end
+      
       puts "#{playlist.name} (#{playlist.count})"
     end
     puts
+  end
+  
+  desc :play_playlist, 'Plays a playlist'
+  def play_playlist(playlist)
+    login
+    playlists = @client.playlists
+    if playlist =~ /^\d+$/
+      playlist = playlists[playlist.to_i]
+    else
+      fz = FuzzyMatch.new(playlists, read: :name)
+      playlist = fz.find(playlist)
+    end
+    @client.playspec(playlist)
   end
 
   desc :upnext, 'Show what\'s up next'

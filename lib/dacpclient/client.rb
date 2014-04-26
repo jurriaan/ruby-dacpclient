@@ -11,6 +11,8 @@ require 'dacpclient/version'
 require 'dacpclient/model'
 require 'dacpclient/models/status'
 require 'dacpclient/models/pair_info'
+require 'dacpclient/models/database'
+require 'dacpclient/models/databases'
 require 'dacpclient/models/playlist'
 require 'dacpclient/models/playlists'
 require 'dacpclient/models/play_queue_item'
@@ -140,6 +142,19 @@ module DACPClient
       set_property('dmcp.volume', volume)
     end
 
+    def cue(command, query, index = 0)
+      do_action(:cue, command: command, query: query, index: index)
+    end
+    
+    def playspec(playlist, db = default_db)
+      dbspec = "'dmap.persistentid:0x#{db.persistent_id.to_s(16)}'"
+      cspec = "'dmap.persistentid:0x#{playlist.persistent_id.to_s(16)}'"
+      # don't worry about playing item's from playlists yet..
+      # container-item-spec='dmap.containeritemid:%s' 
+      do_action(:playspec, database_spec: dbspec, 
+                           container_spec: cspec)
+    end
+
     def repeat
       response = do_action(:getproperty, properties: 'dacp.repeatstate')
       response[:carp]
@@ -182,16 +197,25 @@ module DACPClient
     end
 
     def databases
-      do_action('databases', clean_url: true)
+      meta = %w{dmap.itemname dmap.itemcount dmap.itemid dmap.persistentid 
+                daap.baseplaylist com.apple.itunes.special-playlist 
+                com.apple.itunes.smart-playlist com.apple.itunes.saved-genius
+                dmap.parentcontainerid dmap.editcommandssupported}.join(',')
+      do_action('databases', clean_url: true, meta: meta, model: Databases)
     end
 
     def playlists(db = default_db)
-      do_action("databases/#{db.miid}/containers", clean_url: true,
-                                                   model: Playlists).items
+      meta = %w{dmap.itemname dmap.itemcount dmap.itemid dmap.persistentid 
+                daap.baseplaylist com.apple.itunes.special-playlist 
+                com.apple.itunes.smart-playlist com.apple.itunes.saved-genius
+                dmap.parentcontainerid dmap.editcommandssupported}.join(',')
+      do_action("databases/#{db.item_id}/containers", clean_url: true,
+                                                      meta: meta,
+                                                      model: Playlists).items
     end
 
     def default_db
-      databases.mlcl.to_a.find { |item| item.mdbk == 1 }
+      databases.items.find { |item| item.default_db == 1 }
     end
 
     def default_playlist(db = default_db)
@@ -260,7 +284,7 @@ module DACPClient
         action = '/ctrl-int/1' + action unless clean_url
       end
       params['hsgid'] = @hsgid unless @hsgid.nil?
-
+      params = filter_param_keys(params)
       result = @client.get do |request|
         request.options.params_encoder = Faraday::FlatterParamsEncoder
         request.url action
@@ -269,6 +293,14 @@ module DACPClient
       end
 
       parse_result result, model
+    end
+    
+    def filter_param_keys(params)
+      Hash[
+        params.map { |k, v|
+          [k.to_s.tr('_', '-'), v]
+        }
+      ]
     end
 
     def parse_result(result, model)

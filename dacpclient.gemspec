@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'plist', '~> 3.1.0'
   spec.add_runtime_dependency 'dmapparser', '~> 0.1.0'
   spec.add_runtime_dependency 'thor', '~> 0.19.1'
+  spec.add_runtime_dependency 'fuzzy_match', '~> 2.0.4'
 
   spec.add_development_dependency 'yard'
   spec.add_development_dependency 'redcarpet'
