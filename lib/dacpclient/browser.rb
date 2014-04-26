@@ -39,7 +39,7 @@ module DACPClient
 
     private
 
-    def node_resolver(node, resolved)
+    def node_resolver(_node, resolved)
       devices << Device.new(get_device_host(resolved), resolved.port,
                             resolved.text_record)
 
