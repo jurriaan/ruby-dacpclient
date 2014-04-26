@@ -29,32 +29,25 @@ Or install it yourself using:
 
 See [bin/dacpclient](https://github.com/jurriaan/ruby-dacpclient/blob/master/bin/dacpclient)
 
-    Usage: dacpclient [command]
+    DACPClient v0.3.0
     (c) 2014 Jurriaan Pruis <email@jurriaanpruis.nl>
 
-    Where command is one of the following:
-    status
-    status_ticker
-    play
-    pause
-    playpause
-    next
-    prev
-    databases
-    playqueue
-    upnext
-    stop
-    debug
-    usage
-    previous
-    help
-
-## Todo
-
-- Use bonjour
-- Add tests
-- Add more tagdefinitions
-- Documentation
+    DACPClient commands:
+      dacpclient help            # Display all possible commands
+      dacpclient help [COMMAND]  # Describe available commands or one specific command
+      dacpclient hostname        # Set the hostname
+      dacpclient next            # Go to next item
+      dacpclient pause           # Pause Playing
+      dacpclient play            # Start playing
+      dacpclient play_playlist   # Plays a playlist
+      dacpclient playlists       # Show the playlists
+      dacpclient playpause       # Toggle Playing
+      dacpclient prev            # Go to previous item
+      dacpclient status          # Shows the status of the DACP server
+      dacpclient stop            # Stop playing
+      dacpclient upnext          # Show what's up next
+      dacpclient version         # Show DACPClient Version
+      dacpclient volume          # Get or set volume
 
 ## Contributing
 
