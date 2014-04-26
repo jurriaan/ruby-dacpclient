@@ -6,6 +6,7 @@ require 'socket'
 require 'yaml'
 require 'fileutils'
 require 'io/console'
+require 'fuzzy_match'
 require 'thor'
 
 # This is the CLI DACP Client. Normally installed as `dacpclient`

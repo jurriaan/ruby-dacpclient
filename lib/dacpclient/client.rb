@@ -277,7 +277,10 @@ module DACPClient
       do_action(:setproperty, property => value)
     end
 
-    def do_action(action, clean_url: false, model: nil, **params)
+    def do_action(action, params = {})
+      clean_url = params.delete(:clean_url) || false
+      model = params.delete(:model)
+
       action = '/' + action.to_s
       unless @session_id.nil?
         params['session-id'] = @session_id.to_s
