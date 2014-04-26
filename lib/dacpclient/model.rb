@@ -37,7 +37,7 @@ module DACPClient
         end
       end.to_dmap
     end
-    
+
     def respond_to?(method)
       dmap_attributes.key?(method)
     end

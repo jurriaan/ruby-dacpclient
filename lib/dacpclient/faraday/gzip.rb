@@ -9,7 +9,7 @@ module FaradayMiddleware
     ACCEPT_ENCODING = 'Accept-Encoding'.freeze
     ENCODINGS = 'gzip,deflate'.freeze
 
-    def initialize(app, options = nil)
+    def initialize(app)
       @app = app
     end
 

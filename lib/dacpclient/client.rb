@@ -145,13 +145,13 @@ module DACPClient
     def cue(command, query, index = 0)
       do_action(:cue, command: command, query: query, index: index)
     end
-    
+
     def playspec(playlist, db = default_db)
       dbspec = "'dmap.persistentid:0x#{db.persistent_id.to_s(16)}'"
       cspec = "'dmap.persistentid:0x#{playlist.persistent_id.to_s(16)}'"
       # don't worry about playing item's from playlists yet..
-      # container-item-spec='dmap.containeritemid:%s' 
-      do_action(:playspec, database_spec: dbspec, 
+      # container-item-spec='dmap.containeritemid:%s'
+      do_action(:playspec, database_spec: dbspec,
                            container_spec: cspec)
     end
 
@@ -197,18 +197,18 @@ module DACPClient
     end
 
     def databases
-      meta = %w{dmap.itemname dmap.itemcount dmap.itemid dmap.persistentid 
-                daap.baseplaylist com.apple.itunes.special-playlist 
+      meta = %w(dmap.itemname dmap.itemcount dmap.itemid dmap.persistentid
+                daap.baseplaylist com.apple.itunes.special-playlist
                 com.apple.itunes.smart-playlist com.apple.itunes.saved-genius
-                dmap.parentcontainerid dmap.editcommandssupported}.join(',')
+                dmap.parentcontainerid dmap.editcommandssupported).join(',')
       do_action('databases', clean_url: true, meta: meta, model: Databases)
     end
 
     def playlists(db = default_db)
-      meta = %w{dmap.itemname dmap.itemcount dmap.itemid dmap.persistentid 
-                daap.baseplaylist com.apple.itunes.special-playlist 
+      meta = %w(dmap.itemname dmap.itemcount dmap.itemid dmap.persistentid
+                daap.baseplaylist com.apple.itunes.special-playlist
                 com.apple.itunes.smart-playlist com.apple.itunes.saved-genius
-                dmap.parentcontainerid dmap.editcommandssupported}.join(',')
+                dmap.parentcontainerid dmap.editcommandssupported).join(',')
       do_action("databases/#{db.item_id}/containers", clean_url: true,
                                                       meta: meta,
                                                       model: Playlists).items
@@ -297,13 +297,9 @@ module DACPClient
 
       parse_result result, model
     end
-    
+
     def filter_param_keys(params)
-      Hash[
-        params.map { |k, v|
-          [k.to_s.tr('_', '-'), v]
-        }
-      ]
+      Hash[ params.map { |k, v| [k.to_s.tr('_', '-'), v] }]
     end
 
     def parse_result(result, model)

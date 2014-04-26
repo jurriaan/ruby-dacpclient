@@ -12,7 +12,7 @@ require 'thor'
 # This is the CLI DACP Client. Normally installed as `dacpclient`
 class CLIClient < Thor
   package_name 'DACPClient'
-  
+
   include Thor::Actions
   def initialize(*)
     @config = {}
@@ -115,15 +115,13 @@ class CLIClient < Thor
     count = 0
     num = Math.log10(playlist_items.length).floor + 1
     playlist_items.each do |playlist|
-      unless playlist.base_playlist?
-        printf("%#{num}d. ", count+=1)
-      end
-      
+      printf("%#{num}d. ", count += 1) unless playlist.base_playlist?
+
       puts "#{playlist.name} (#{playlist.count})"
     end
     puts
   end
-  
+
   desc :play_playlist, 'Plays a playlist'
   def play_playlist(playlist)
     login
@@ -190,9 +188,9 @@ class CLIClient < Thor
     print 'DACPClient and DMAPParser are Copyright (c) '
     puts "#{Time.now.year} Jurriaan Pruis <email@jurriaanpruis.nl>"
   end
-  
+
   default_task :banner
-  
+
   desc :help, 'Display all possible commands'
   def banner
     puts "DACPClient v#{DACPClient::VERSION}"
@@ -200,7 +198,7 @@ class CLIClient < Thor
     puts
     help
   end
-  
+
   private
 
   def show_status(status = @client.status, start_time = nil)
