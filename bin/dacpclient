@@ -59,21 +59,6 @@ class CLIClient < Thor
     show_status
   end
 
-  desc :home_sharing, 'Setup Home Sharing (Not fully functional)'
-  def home_sharing
-    puts 'Setting up Home Sharing. Saving Home Sharing GUID to ' + config_file
-    puts "\nPlease enter your Apple ID credentials:"
-    email = ask('Apple ID (e-mail address):').strip
-    password = ask('Password:')
-    guid = @client.setup_home_sharing(email, password)
-    @config['appleid'] = email
-    @config['hsgid'] = guid
-    save_config
-    puts "\n\n"
-    puts "Got your Home Sharing GUID (#{guid}). Logging in.."
-    login
-  end
-
   desc :hostname, 'Set the hostname'
   def hostname
     @config['host'] = ask('Please enter a new hostname to connect to:').strip

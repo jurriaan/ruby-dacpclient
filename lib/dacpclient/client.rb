@@ -23,9 +23,6 @@ module DACPClient
     attr_writer :guid
     attr_reader :name, :host, :port, :session_id
 
-    HOME_SHARING_HOST = 'https://homesharing.itunes.apple.com'.freeze
-    HOME_SHARING_PATH = '/WebObjects/MZHomeSharing.woa/wa/getShareIdentifiers'.freeze
-
     DEFAULT_HEADERS = {
       'Viewer-Only-Client' => '1',
       'Accept-Encoding' => 'gzip',
@@ -55,19 +52,6 @@ module DACPClient
     alias_method :prev, :previtem
     alias_method :next, :nextitem
     alias_method :speakers, :getspeakers
-
-    def setup_home_sharing(user, password)
-      hs_client = Faraday.new(url: HOME_SHARING_HOST)
-      result = hs_client.post do |request|
-        request.url HOME_SHARING_PATH
-        request.headers['Content-Type'] = 'text/xml'
-        request.headers.merge!(DEFAULT_HEADERS)
-        request.body = { 'appleId' => user, 'guid' => 'empty',
-                         'password' => password }.to_plist
-      end
-      response = Plist.parse_xml(result.body)
-      @hsgid = response['sgid']
-    end
 
     def guid
       return @guid unless @guid.nil?
