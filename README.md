@@ -29,7 +29,7 @@ Or install it yourself using:
 
 See [bin/dacpclient](https://github.com/jurriaan/ruby-dacpclient/blob/master/bin/dacpclient)
 
-    DACPClient v0.3.0
+    DACPClient v0.3.1
     (c) 2014 Jurriaan Pruis <email@jurriaanpruis.nl>
 
     DACPClient commands:
@@ -37,11 +37,11 @@ See [bin/dacpclient](https://github.com/jurriaan/ruby-dacpclient/blob/master/bin
       dacpclient help [COMMAND]  # Describe available commands or one specific command
       dacpclient hostname        # Set the hostname
       dacpclient next            # Go to next item
-      dacpclient pause           # Pause Playing
+      dacpclient pause           # Pause playing
       dacpclient play            # Start playing
       dacpclient play_playlist   # Plays a playlist
       dacpclient playlists       # Show the playlists
-      dacpclient playpause       # Toggle Playing
+      dacpclient playpause       # Toggle playing
       dacpclient prev            # Go to previous item
       dacpclient status          # Shows the status of the DACP server
       dacpclient stop            # Stop playing
@@ -59,6 +59,7 @@ See [bin/dacpclient](https://github.com/jurriaan/ruby-dacpclient/blob/master/bin
 
 ## Contributors
 
+- [Daisuke Shimamoto](https://github.com/diskshima)
 - [Jurriaan Pruis](https://github.com/jurriaan)
 
 ## Thanks
