@@ -2,5 +2,5 @@ gemspec
 
 source 'https://rubygems.org'
 
-gem 'minitest', '~> 5.3.1'
-gem 'rubocop', '~> 0.21.0'
+gem 'minitest', '~> 5.4.0'
+gem 'rubocop', '~> 0.24.1'

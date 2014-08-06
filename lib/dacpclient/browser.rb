@@ -23,11 +23,10 @@ module DACPClient
       @devices = []
     end
 
-    def browse(new_service = true)
-      service_name = new_service ? DAAP_SERVICE : TOUCHABLE_SERVICE
+    def browse
       @devices = []
-      timeout(2) do
-        DNSSD.browse!(service_name) do |node|
+      timeout(5) do
+        DNSSD.browse!(TOUCHABLE_SERVICE) do |node|
           resolve(node)
           break unless node.flags.more_coming?
         end

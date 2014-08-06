@@ -26,6 +26,8 @@ module DACPClient
       @pairing_string = generate_pairing_string(@pair, @name, @device_type)
       @expected = PairingServer.generate_pin_challenge(@pair, @pin)
       @service = DNSSD.register!(@name, MDNS_TYPE, 'local', @port, text_record)
+      @browser = DACPClient::Browser.new
+      @browser.browse
 
       PairInfo.new(DMAPParser::Parser.parse(@pairing_string))
       super
@@ -45,9 +47,7 @@ module DACPClient
     def serve(client)
       data = client.gets
       peer_addr = client.peeraddr[2]
-      browser = DACPClient::Browser.new
-      browser.browse
-      @peer = browser.devices.find do |device|
+      @peer = @browser.devices.find do |device|
         device.host == peer_addr
       end
       if data =~ /pairingcode=#{@expected}/i && @peer

@@ -8,7 +8,7 @@ YARD::Rake::YardocTask.new
 task test: :rubocop do
 end
 
-Rubocop::RakeTask.new(:rubocop) do |task|
+RuboCop::RakeTask.new(:rubocop) do |task|
   task.patterns = ['**/*.rb', 'Rakefile', 'dacpclient.gemspec', 'bin/*']
   task.options = ['-a']
   task.fail_on_error = true

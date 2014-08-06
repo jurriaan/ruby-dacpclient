@@ -18,7 +18,7 @@ class CLIClient < Thor
     @config = {}
     @config['client_name'] ||= "DACPClient (#{Socket.gethostname})"
     @config['host'] ||= 'localhost'
-    @config['known_databases'] ||= ['']
+    @config['known_databases'] ||= []
 
     load_config
 
@@ -29,9 +29,16 @@ class CLIClient < Thor
     end
 
     browser = DACPClient::Browser.new
-    browser.browse(false)
-    database = browser.devices.find do |device|
-      @config['known_databases'].include? device.database_id
+
+    database = nil
+
+    3.times do
+      browser.browse
+      database = browser.devices.find do |device|
+        @config['known_databases'].include? device.database_id
+      end
+      break if database
+      sleep 0.5
     end
 
     unless database
@@ -291,7 +298,13 @@ class CLIClient < Thor
     end
   end
 
+  def clean_config
+    @config['known_databases'].delete('')
+    @config['known_databases'].uniq!
+  end
+
   def save_config
+    clean_config
     File.open(File.join(config_dir, 'config.yml'), 'w') do |out|
       YAML.dump(@config, out)
     end
