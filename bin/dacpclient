@@ -18,8 +18,7 @@ class CLIClient < Thor
     @config = {}
     @config['client_name'] ||= "DACPClient (#{Socket.gethostname})"
     @config['host'] ||= 'localhost'
-    @config['known_databases'] ||= []
-
+    @config['known_services'] ||= []
     load_config
 
     if @config['guid'].nil? || @config['guid'] !~ /^[A-F0-9]{16}$/
@@ -34,8 +33,8 @@ class CLIClient < Thor
 
     3.times do
       browser.browse
-      database = browser.devices.find do |device|
-        @config['known_databases'].include? device.database_id
+      database = browser.services.find do |service|
+        @config['known_services'].include? service.name
       end
       break if database
       sleep 0.5
@@ -51,7 +50,7 @@ class CLIClient < Thor
                                                  @config['guid'])
       pairserver.pin = pin
       database = pairserver.start
-      @config['known_databases'] << database.database_id
+      @config['known_services'] << database.name
       save_config
     end
     @client = DACPClient::Client.new(@config['client_name'], database.host,
@@ -301,8 +300,8 @@ class CLIClient < Thor
   end
 
   def clean_config
-    @config['known_databases'].delete('')
-    @config['known_databases'].uniq!
+    @config['known_services'].delete('')
+    @config['known_services'].uniq!
   end
 
   def save_config

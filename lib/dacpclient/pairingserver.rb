@@ -46,10 +46,11 @@ module DACPClient
 
     def serve(client)
       data = client.gets
-      peer_addr = client.peeraddr[2]
-      @peer = @browser.devices.find do |device|
-        device.host == peer_addr
+
+      @peer = @browser.services.find do |service|
+        data =~ /servicename=#{service.name}/i
       end
+
       if data =~ /pairingcode=#{@expected}/i && @peer
         client.print "HTTP/1.1 200 OK\n" \
                      "Content-Length: #{@pairing_string.length}\n\n"
