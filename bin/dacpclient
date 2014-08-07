@@ -43,7 +43,7 @@ class CLIClient < Thor
     pin = @config['pin'].to_s.chars.map { |num| num.to_i }
 
     unless database
-      pin = 4.times.map { Random.rand(10) } if pin.nil?
+      pin = 4.times.map { Random.rand(10) } if pin.empty?
       puts 'Cannot find paired Libraries, waiting for a pair request..'
       puts "Pincode: #{pin}"
       pairserver = DACPClient::PairingServer.new(@config['client_name'],
