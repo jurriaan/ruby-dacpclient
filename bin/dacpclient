@@ -40,7 +40,7 @@ class CLIClient < Thor
       sleep 0.5
     end
 
-    pin = @config['pin'].to_s.chars.map { |pin| pin.to_i }
+    pin = @config['pin'].to_s.chars.map { |num| num.to_i }
 
     unless database
       pin = 4.times.map { Random.rand(10) } if pin.nil?
@@ -53,6 +53,7 @@ class CLIClient < Thor
       @config['known_services'] << database.name
       save_config
     end
+
     @client = DACPClient::Client.new(@config['client_name'], database.host,
                                      database.port)
     @client.guid = @config['guid']
@@ -238,6 +239,7 @@ class CLIClient < Thor
         end
       end
     end
+
     loop do
       status = @client.status true
       start_time = Time.now.to_f * 1000.0
@@ -253,10 +255,11 @@ class CLIClient < Thor
       @client.login
     end
     @login = true
-    if @client.host != @config['host']
-      @config['host'] = @client.host
-      save_config
-    end
+
+    return if @client.host == @config['host']
+
+    @config['host'] = @client.host
+    save_config
   end
 
   def format_time(millis)

@@ -29,7 +29,6 @@ module DACPClient
       @browser = DACPClient::Browser.new
       @browser.browse
 
-      PairInfo.new(DMAPParser::Parser.parse(@pairing_string))
       super
       join
 

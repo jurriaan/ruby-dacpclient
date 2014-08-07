@@ -39,7 +39,7 @@ module DACPClient
     private
 
     def node_resolver(_node, resolved)
-      services << Service.new(resolved.name, get_device_host(resolved), 
+      services << Service.new(resolved.name, get_device_host(resolved),
                               resolved.port, resolved.text_record)
 
       resolved.flags.more_coming?
