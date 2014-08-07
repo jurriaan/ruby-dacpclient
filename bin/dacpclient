@@ -41,6 +41,8 @@ class CLIClient < Thor
       sleep 0.5
     end
 
+    pin = @config['pin'].to_s.chars.map { |pin| pin.to_i }
+
     unless database
       pin = 4.times.map { Random.rand(10) } if pin.nil?
       puts 'Cannot find paired Libraries, waiting for a pair request..'
