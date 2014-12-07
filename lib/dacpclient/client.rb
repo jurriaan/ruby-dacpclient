@@ -15,6 +15,10 @@ require 'dacpclient/models/database'
 require 'dacpclient/models/databases'
 require 'dacpclient/models/playlist'
 require 'dacpclient/models/playlists'
+require 'dacpclient/models/artist'
+require 'dacpclient/models/artists'
+require 'dacpclient/models/album'
+require 'dacpclient/models/albums'
 require 'dacpclient/models/play_queue_item'
 require 'dacpclient/models/play_queue'
 
@@ -219,7 +223,7 @@ module DACPClient
     end
 
     def default_playlist(db = default_db)
-      playlists(db).find { |item| item.base_playlist? }
+      playlists(db).find(&:base_playlist?)
     end
 
     def artwork(database, id, width = 320, height = 320)
@@ -259,9 +263,23 @@ module DACPClient
                  com.apple.itunes.content-rating daap.songdatereleased
                  com.apple.itunes.movie-info-xml daap.songalbumartist
                  com.apple.itunes.extended-media-kind).join(',')
-      url = "databases/#{db.miid}/containers/#{container.miid}/items"
-      do_action(url, { query: q, type: 'music', sort: 'album', meta: meta,
-                       :'include-sort-headers' => 1 }, clean_url: true)
+      url = "databases/#{db.item_id}/containers/#{container.item_id}/items"
+      do_action(url, query: q, type: 'music', sort: 'album', meta: meta,
+                     :'include-sort-headers' => 1, clean_url: true)
+    end
+
+    def artists(db = default_db)
+      url = "databases/#{db.item_id}/groups"
+      meta = 'dmap.itemname,dmap.itemid,dmap.persistentid,daap.songartist,daap.groupalbumcount,daap.songartistid'
+      query = "('daap.songartist!:'+('com.apple.itunes.extended-media-kind:1','com.apple.itunes.extended-media-kind:32'))"
+      do_action(url, meta: meta, type: 'music', :'group-type' => 'artists', sort: 'album', :'include-sort-headers' => 1, query: query, clean_url: true, model: Artists).items
+    end
+
+    def albums(db = default_db)
+      url = "databases/#{db.item_id}/groups"
+      meta = 'dmap.itemname,dmap.itemid,dmap.persistentid,daap.songartist,daap.songalbumartist'
+      query = "('daap.songartist!:'+('com.apple.itunes.extended-media-kind:1','com.apple.itunes.extended-media-kind:32'))"
+      do_action(url, meta: meta, type: 'music', :'group-type' => 'albums', sort: 'artist', :'include-sort-headers' => 1, query: query, clean_url: true, model: Albums).items
     end
 
     private
@@ -286,6 +304,7 @@ module DACPClient
         params['session-id'] = @session_id.to_s
         action = '/ctrl-int/1' + action unless clean_url
       end
+
       params['hsgid'] = @hsgid unless @hsgid.nil?
       params = filter_param_keys(params)
       result = @client.get do |request|
@@ -299,13 +318,13 @@ module DACPClient
     end
 
     def filter_param_keys(params)
-      Hash[ params.map { |k, v| [k.to_s.tr('_', '-'), v] }]
+      Hash[params.map { |k, v| [k.to_s.tr('_', '-'), v] }]
     end
 
     def parse_result(result, model)
       if !result.success?
         fail DACPForbiddenError, result
-      elsif result.headers['Content-Type'] == 'application/x-dmap-tagged'
+      elsif result.headers['Content-Type'] == 'application/x-dmap-tagged' && result.body.length > 0
         res = DMAPParser::Parser.parse(result.body)
         model ? model.new(res) : res
       else

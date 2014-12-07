@@ -22,7 +22,7 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'faraday', '~> 0.9.0'
   spec.add_runtime_dependency 'dnssd', '~> 2.0'
   spec.add_runtime_dependency 'plist', '~> 3.1.0'
-  spec.add_runtime_dependency 'dmapparser', '~> 0.1.0'
+  spec.add_runtime_dependency 'dmapparser', '~> 0.2.0'
   spec.add_runtime_dependency 'thor', '~> 0.19.1'
   spec.add_runtime_dependency 'fuzzy_match', '~> 2.1.0'
 
@@ -30,6 +30,8 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'redcarpet'
   spec.add_development_dependency 'github-markup'
   spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rubocop', '~> 0.27.1'
+  spec.add_development_dependency 'minitest', '~> 5.4.0'
 
   spec.required_ruby_version = '>= 2.0.0'
 end

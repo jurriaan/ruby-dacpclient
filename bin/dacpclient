@@ -40,7 +40,7 @@ class CLIClient < Thor
       sleep 0.5
     end
 
-    pin = @config['pin'].to_s.chars.map { |num| num.to_i }
+    pin = @config['pin'].to_s.chars.map(&:to_i)
 
     unless database
       pin = 4.times.map { Random.rand(10) } if pin.empty?
@@ -127,6 +127,38 @@ class CLIClient < Thor
       printf("%#{num}d. ", count += 1) unless playlist.base_playlist?
 
       puts "#{playlist.name} (#{playlist.count})"
+    end
+    puts
+  end
+
+  desc :artists, 'Show the artists'
+  def artists
+    login
+    artists = @client.artists
+    puts 'Artists:'
+    puts '----------'
+    count = 0
+    num = Math.log10(artists.length).floor + 1
+    artists.each do |artist|
+      printf("%#{num}d. ", count += 1)
+
+      puts "#{artist.name} (#{artist.count} songs, #{artist.album_count} albums)"
+    end
+    puts
+  end
+
+  desc :albums, 'Show the albums'
+  def albums
+    login
+    albums = @client.albums
+    puts 'Albums:'
+    puts '----------'
+    count = 0
+    num = Math.log10(albums.length).floor + 1
+    albums.each do |album|
+      printf("%#{num}d. ", count += 1)
+
+      puts "#{album.name} [#{album.album_artist}] (#{album.count} songs)"
     end
     puts
   end
