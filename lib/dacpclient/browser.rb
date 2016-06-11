@@ -25,7 +25,7 @@ module DACPClient
 
     def browse
       @services = []
-      timeout(5) do
+      Timeout.timeout(5) do
         DNSSD.browse!(TOUCHABLE_SERVICE) do |node|
           resolve(node)
           break unless node.flags.more_coming?
