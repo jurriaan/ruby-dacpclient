@@ -1,11 +1,11 @@
 require 'socket'
 require 'dnssd'
 require 'digest'
-require 'gserver'
 require 'dmapparser/builder'
+
 module DACPClient
   # The pairingserver handles pairing with iTunes
-  class PairingServer < GServer
+  class PairingServer
     attr_accessor :pin, :device_type
     attr_reader :peer
 
@@ -19,7 +19,6 @@ module DACPClient
       @pin = [0, 0, 0, 0]
       @peer = nil
       @device_type = 'iPod'
-      super port, host
     end
 
     def start
@@ -29,8 +28,7 @@ module DACPClient
       @browser = DACPClient::Browser.new
       @browser.browse
 
-      super
-      join
+      serve
 
       @service.stop
 
@@ -43,22 +41,24 @@ module DACPClient
       Digest::MD5.hexdigest(pair.upcase + pin_string).upcase
     end
 
-    def serve(client)
-      data = client.gets
+    def serve
+      server = TCPServer.open(@host, @port)
 
-      @peer = @browser.services.find do |service|
-        data =~ /servicename=#{service.name}/i
-      end
+      Thread.start(server.accept) do |s|
+        data = s.gets
+        @peer = @browser.services.find do |service|
+          data =~ /servicename=#{service.name}/i
+        end
 
-      if data =~ /pairingcode=#{@expected}/i && @peer
-        client.print "HTTP/1.1 200 OK\n" \
-                     "Content-Length: #{@pairing_string.length}\n\n"
-        client.print @pairing_string
-        client.close
-        stop
-      else
-        client.print "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
-        client.close
+        if data =~ /pairingcode=#{@expected}/i && @peer
+          s.write "HTTP/1.1 200 OK\n" \
+                  "Content-Length: #{@pairing_string.length}\n\n"
+          s.write @pairing_string
+          s.close
+        else
+          s.write "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
+          s.close
+        end
       end
     end
 
