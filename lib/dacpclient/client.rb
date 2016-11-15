@@ -237,7 +237,7 @@ module DACPClient
 
     def search(search, type = nil, db = default_db,
                container = default_playlist(default_db))
-      search = URI.escape(search)
+      searches = search.split.map { |q| URI.escape(q) }
       types = {
         title: 'dmap.itemname',
         artist: 'daap.songartist',
@@ -247,11 +247,13 @@ module DACPClient
       }
       queries = []
       type = types.keys if type.nil?
-      Array(type).each do |t|
-        queries << "'#{types[t]}:#{search}'"
+      searches.each do |search|
+        Array(type).each do |t|
+          queries << "'#{types[t]}:#{search}'"
+        end
       end
 
-      q = queries.join(',')
+      q = queries.join(' ')
       q = '(' + q + ')' if queries.length > 1
       meta  = %w(dmap.itemname dmap.itemid com.apple.itunes.has-chapter-data
                  daap.songalbum com.apple.itunes.cloud-id dmap.containeritemid
