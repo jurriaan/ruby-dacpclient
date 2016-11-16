@@ -226,9 +226,9 @@ module DACPClient
       playlists(db).find(&:base_playlist?)
     end
 
-    def artwork(database, id, width = 320, height = 320)
-      url = "databases/#{database}/items/#{id}/extra_data/artwork"
-      do_action(url, { mw: width, mh: height }, clean_url: true)
+    def artwork(id, width = 320, height = 320, db = default_db)
+      url = "databases/#{db.item_id}/items/#{id}/extra_data/artwork"
+      do_action(url, mw: width, mh: height, clean_url: true)
     end
 
     def now_playing_artwork(width = 320, height = 320)
