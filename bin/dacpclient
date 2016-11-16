@@ -142,7 +142,7 @@ class CLIClient < Thor
     playlist_items.each do |playlist|
       printf("%#{num}d. ", count += 1) unless playlist.base_playlist?
 
-      puts "#{playlist.name} (#{playlist.item_id})"
+      puts "#{playlist.name} (#{playlist.count})"
     end
     puts
   end
