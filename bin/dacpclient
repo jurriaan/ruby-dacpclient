@@ -115,6 +115,22 @@ class CLIClient < Thor
     show_status
   end
 
+  desc :databases, 'Show the databases'
+  def databases
+    login
+    database_items = @client.databases.items
+    puts 'Databases:'
+    puts '----------'
+    count = 0
+    num = Math.log10(database_items.length).floor + 1
+    database_items.each do |database|
+      printf("%#{num}d. ", count += 1)
+
+      puts "#{database.name} (#{database.item_id})"
+    end
+    puts
+  end
+
   desc :playlists, 'Show the playlists'
   def playlists
     login
@@ -126,7 +142,7 @@ class CLIClient < Thor
     playlist_items.each do |playlist|
       printf("%#{num}d. ", count += 1) unless playlist.base_playlist?
 
-      puts "#{playlist.name} (#{playlist.count})"
+      puts "#{playlist.name} (#{playlist.item_id})"
     end
     puts
   end
@@ -159,6 +175,18 @@ class CLIClient < Thor
       printf("%#{num}d. ", count += 1)
 
       puts "#{album.name} [#{album.album_artist}] (#{album.count} songs)"
+    end
+    puts
+  end
+
+  desc :search, 'Search for a song'
+  def search(query)
+    login
+    songs = @client.search query
+    puts 'Songs:'
+    puts '----------'
+    songs.each do |song|
+      puts "#{song.name} - #{song.artist} - #{song.album}"
     end
     puts
   end

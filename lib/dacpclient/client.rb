@@ -19,6 +19,8 @@ require 'dacpclient/models/artist'
 require 'dacpclient/models/artists'
 require 'dacpclient/models/album'
 require 'dacpclient/models/albums'
+require 'dacpclient/models/song'
+require 'dacpclient/models/songs'
 require 'dacpclient/models/play_queue_item'
 require 'dacpclient/models/play_queue'
 
@@ -237,7 +239,7 @@ module DACPClient
 
     def search(search, type = nil, db = default_db,
                container = default_playlist(default_db))
-      searches = search.split.map { |q| URI.escape(q) }
+      search_terms = search.split.map { |q| URI.escape(q) }
       types = {
         title: 'dmap.itemname',
         artist: 'daap.songartist',
@@ -246,16 +248,19 @@ module DACPClient
         composer: 'daap.songcomposer'
       }
       queries = []
-      type = types.keys if type.nil?
-      searches.each do |search|
+      type = [:title, :artist, :album] if type.nil?
+      search_terms.each do |s|
+        qs = []
         Array(type).each do |t|
-          queries << "'#{types[t]}:#{search}'"
+          qs << "'#{types[t]}:*#{s}*'"
         end
+        queries << '(' + qs.join(',') + ')'
       end
 
-      q = queries.join(' ')
+      q = queries.join('+')               
       q = '(' + q + ')' if queries.length > 1
-      meta  = %w(dmap.itemname dmap.itemid com.apple.itunes.has-chapter-data
+
+      meta = %w(dmap.itemname dmap.itemid com.apple.itunes.has-chapter-data
                  daap.songalbum com.apple.itunes.cloud-id dmap.containeritemid
                  com.apple.itunes.has-video com.apple.itunes.itms-songid
                  com.apple.itunes.extended-media-kind dmap.downloadstatus
@@ -266,8 +271,8 @@ module DACPClient
                  com.apple.itunes.movie-info-xml daap.songalbumartist
                  com.apple.itunes.extended-media-kind).join(',')
       url = "databases/#{db.item_id}/containers/#{container.item_id}/items"
-      do_action(url, query: q, type: 'music', sort: 'album', meta: meta,
-                     :'include-sort-headers' => 1, clean_url: true)
+      do_action(url, query: q, type: 'music', sort: 'name', meta: meta,
+                     :'include-sort-headers' => 1, clean_url: true, model: Songs).items
     end
 
     def artists(db = default_db)
