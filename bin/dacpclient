@@ -185,7 +185,11 @@ class CLIClient < Thor
     songs = @client.search query
     puts 'Songs:'
     puts '----------'
+    count = 0
+    num = Math.log10(songs.length).floor + 1
     songs.each do |song|
+      printf("%#{num}d. ", count += 1)
+
       puts "#{song.name} - #{song.artist} - #{song.album}"
     end
     puts
