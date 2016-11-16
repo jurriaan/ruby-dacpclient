@@ -271,7 +271,7 @@ module DACPClient
                  com.apple.itunes.movie-info-xml daap.songalbumartist
                  com.apple.itunes.extended-media-kind).join(',')
       url = "databases/#{db.item_id}/containers/#{container.item_id}/items"
-      do_action(url, query: q, type: 'music', sort: 'name', meta: meta,
+      do_action(url, query: q, type: 'music', sort: 'album', meta: meta,
                      :'include-sort-headers' => 1, clean_url: true, model: Songs).items
     end
 
